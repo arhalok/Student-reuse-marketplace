@@ -3,7 +3,10 @@
 > **Core Principle:** *Buy less. Reuse more. Spend less.*  
 > A campus-first marketplace for buying, selling, exchanging, renting, and giving away reusable student academic essentials.
 
-Built with **Next.js (App Router)**, **Tailwind CSS**, and **Supabase (PostgreSQL + RLS)** — optimized for **one-click deployment on Vercel**.
+Built with **Next.js (App Router)**, **Tailwind CSS**, and **Supabase (PostgreSQL + RLS)** — deployed live on **Vercel**.
+
+🌐 **Live Application:** [https://student-reuse-marketplace.vercel.app](https://student-reuse-marketplace.vercel.app)  
+📦 **GitHub Repository:** [https://github.com/arhalok/Student-reuse-marketplace](https://github.com/arhalok/Student-reuse-marketplace)
 
 ---
 
