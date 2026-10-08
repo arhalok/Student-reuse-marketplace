@@ -13,6 +13,8 @@ import {
   ItemCondition,
   TransactionMode,
   Report,
+  NotificationItem,
+  SavedSearch,
 } from './types';
 import {
   INITIAL_CAMPUSES,
@@ -94,6 +96,26 @@ interface MarketplaceContextType {
     co2SavedKg: number;
   };
 
+  // Saved Items & History
+  savedListingIds: string[];
+  toggleSaveListing: (listingId: string) => void;
+  recentlyViewedIds: string[];
+  addToRecentlyViewed: (listingId: string) => void;
+
+  // Notifications
+  notifications: NotificationItem[];
+  markNotificationRead: (id: string) => void;
+  addNotification: (item: Omit<NotificationItem, 'id' | 'createdAt' | 'read'>) => void;
+
+  // Saved Searches
+  savedSearches: SavedSearch[];
+  saveSearch: (query: string) => void;
+  removeSearch: (id: string) => void;
+
+  // Sorting
+  sortOption: 'RECOMMENDED' | 'NEWEST' | 'PRICE_LOW' | 'PRICE_HIGH' | 'BEST_SAVINGS';
+  setSortOption: (opt: 'RECOMMENDED' | 'NEWEST' | 'PRICE_LOW' | 'PRICE_HIGH' | 'BEST_SAVINGS') => void;
+
   // Reset to default
   resetData: () => void;
 }
@@ -114,6 +136,96 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | 'ALL'>('ALL');
   const [selectedMode, setSelectedMode] = useState<TransactionMode | 'ALL'>('ALL');
+
+  // Saved items & history
+  const [savedListingIds, setSavedListingIds] = useState<string[]>(['list-1']);
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(['list-1', 'list-2']);
+  
+  // Notification center
+  const [notifications, setNotifications] = useState<NotificationItem[]>([
+    {
+      id: 'notif-1',
+      title: '✨ Smart Match Found',
+      message: 'Someone just listed Casio FX-991CW on IIT Delhi under ₹900.',
+      type: 'MATCH',
+      read: false,
+      createdAt: '2026-10-08T18:00:00.000Z',
+      linkType: 'LISTING',
+    },
+    {
+      id: 'notif-2',
+      title: '🤝 Offer Accepted by Senior',
+      message: 'Rahul accepted your offer of ₹350 for Erwin Kreyszig Math Book.',
+      type: 'OFFER',
+      read: false,
+      createdAt: '2026-10-08T16:00:00.000Z',
+      linkType: 'OFFER',
+    },
+    {
+      id: 'notif-3',
+      title: '📍 Campus Meetup Scheduled',
+      message: 'Meetup set at Central Library Ground Foyer today at 4:00 PM.',
+      type: 'MEETUP',
+      read: true,
+      createdAt: '2026-10-08T13:00:00.000Z',
+      linkType: 'OFFER',
+    },
+  ]);
+
+  // Saved searches
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([
+    {
+      id: 'search-1',
+      query: 'Casio ClassWiz FX-991',
+      campusId: currentCampus.id,
+      createdAt: '2026-10-08T10:00:00.000Z',
+    },
+  ]);
+
+  // Sorting
+  const [sortOption, setSortOption] = useState<'RECOMMENDED' | 'NEWEST' | 'PRICE_LOW' | 'PRICE_HIGH' | 'BEST_SAVINGS'>('RECOMMENDED');
+
+  const toggleSaveListing = (listingId: string) => {
+    setSavedListingIds((prev) =>
+      prev.includes(listingId) ? prev.filter((id) => id !== listingId) : [...prev, listingId]
+    );
+  };
+
+  const addToRecentlyViewed = (listingId: string) => {
+    setRecentlyViewedIds((prev) => [listingId, ...prev.filter((id) => id !== listingId)].slice(0, 10));
+  };
+
+  const markNotificationRead = (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  };
+
+  const addNotification = (item: Omit<NotificationItem, 'id' | 'createdAt' | 'read'>) => {
+    const newNotif: NotificationItem = {
+      ...item,
+      id: `notif-${Date.now()}`,
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+  };
+
+  const saveSearch = (query: string) => {
+    if (!query.trim()) return;
+    const newSearch: SavedSearch = {
+      id: `search-${Date.now()}`,
+      query: query.trim(),
+      campusId: currentCampus.id,
+      createdAt: new Date().toISOString(),
+    };
+    setSavedSearches((prev) => [
+      newSearch,
+      ...prev.filter((s) => s.query.toLowerCase() !== query.trim().toLowerCase()),
+    ]);
+  };
+
+  const removeSearch = (id: string) => {
+    setSavedSearches((prev) => prev.filter((s) => s.id !== id));
+  };
 
   // Load from localStorage on client mount if available
   useEffect(() => {
@@ -506,6 +618,18 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
           moneySaved,
           co2SavedKg,
         },
+        savedListingIds,
+        toggleSaveListing,
+        recentlyViewedIds,
+        addToRecentlyViewed,
+        notifications,
+        markNotificationRead,
+        addNotification,
+        savedSearches,
+        saveSearch,
+        removeSearch,
+        sortOption,
+        setSortOption,
         resetData,
       }}
     >

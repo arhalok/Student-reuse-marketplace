@@ -3,17 +3,18 @@
 import React, { useState } from 'react';
 import { useMarketplace } from '@/lib/store';
 import { ItemCondition, NeedRequest } from '@/lib/types';
+import { ModalWrapper } from '@/components/ui/ModalWrapper';
 import {
   Layers,
-  X,
   Plus,
   Sparkles,
   Calendar,
-  DollarSign,
   CheckCircle2,
   Bell,
   ArrowRight,
   Send,
+  X,
+  Filter,
 } from 'lucide-react';
 
 interface NeedBoardModalProps {
@@ -42,10 +43,10 @@ export const NeedBoardModal: React.FC<NeedBoardModalProps> = ({
   const [itemTitle, setItemTitle] = useState('');
   const [maxBudget, setMaxBudget] = useState<number | ''>(850);
   const [preferredCondition, setPreferredCondition] = useState<ItemCondition>('EXCELLENT');
-  const [requiredByDate, setRequiredByDate] = useState('2026-10-18');
+  const [requiredByDate, setRequiredByDate] = useState('2026-10-25');
   const [notes, setNotes] = useState('');
   const [targetSemester, setTargetSemester] = useState<number>(2);
-  const [matchNotification, setMatchNotification] = useState<number | null>(null);
+  const [matchNotification, setMatchNotification] = useState<{ count: number; listingId?: string } | null>(null);
 
   if (!isOpen) return null;
 
@@ -53,7 +54,7 @@ export const NeedBoardModal: React.FC<NeedBoardModalProps> = ({
     e.preventDefault();
     if (!itemTitle.trim()) return;
 
-    const { matchedListingsCount } = createNeedRequest({
+    const { need, matchedListingsCount } = createNeedRequest({
       itemTitle,
       maxBudget: Number(maxBudget) || 1000,
       preferredCondition,
@@ -62,7 +63,10 @@ export const NeedBoardModal: React.FC<NeedBoardModalProps> = ({
       targetSemester,
     });
 
-    setMatchNotification(matchedListingsCount);
+    setMatchNotification({
+      count: matchedListingsCount,
+      listingId: need.matchedListingId,
+    });
     setShowCreateForm(false);
     setItemTitle('');
     setNotes('');
@@ -71,264 +75,221 @@ export const NeedBoardModal: React.FC<NeedBoardModalProps> = ({
   const campusNeeds = needRequests.filter((n) => n.campusId === currentCampus.id);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="relative w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-zinc-200 my-8 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 bg-amber-50/50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
-              <Layers className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-extrabold text-zinc-900 text-lg">Need Board</h2>
-                <span className="rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 border border-amber-200">
-                  Demand Engine (Reverse Marketplace)
-                </span>
-              </div>
-              <p className="text-xs text-zinc-500">
-                Can&apos;t find what you need? Post a request. We match sellers when they list it.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Campus Need Board"
+      subtitle={`Demand before supply: Seniors see what juniors need on ${currentCampus.shortCode}`}
+      icon={
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-900 border border-amber-200">
+          <Layers className="h-5 w-5" />
         </div>
-
-        {/* Notification Banner if Matched */}
+      }
+      badge={
+        <span className="rounded-full bg-amber-100 text-amber-950 text-[10px] font-bold px-2 py-0.5 border border-amber-200">
+          Reverse Marketplace
+        </span>
+      }
+      maxWidth="3xl"
+    >
+      <div className="space-y-5">
+        {/* Proactive Match Notification Banner */}
         {matchNotification !== null && (
-          <div className="border-b border-emerald-200 bg-emerald-50 p-3.5 px-6 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-emerald-900 font-semibold">
-              <Sparkles className="h-4 w-4 text-emerald-600" />
+          <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50 text-xs text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-modal-in">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
               <span>
-                {matchNotification > 0
-                  ? `Success! We found ${matchNotification} matching active listing(s) on your campus!`
-                  : 'Your request is live on the campus board! You will be alerted as soon as a senior lists it.'}
+                {matchNotification.count > 0 ? (
+                  <>
+                    <strong>Match found!</strong> There are {matchNotification.count} active listing(s) matching your request.
+                  </>
+                ) : (
+                  <>
+                    <strong>Your request is live on {currentCampus.shortCode}!</strong> Relevant seniors will be alerted as soon as they list it.
+                  </>
+                )}
               </span>
             </div>
-            <button
-              onClick={() => setMatchNotification(null)}
-              className="text-xs text-emerald-700 font-bold hover:underline"
-            >
-              Dismiss
-            </button>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {matchNotification.listingId && (
+                <button
+                  onClick={() => {
+                    if (matchNotification.listingId) {
+                      onViewListing(matchNotification.listingId);
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-2xs"
+                >
+                  View Matched Listing →
+                </button>
+              )}
+              <button
+                onClick={() => setMatchNotification(null)}
+                className="text-emerald-800 font-bold hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Action bar */}
-        <div className="border-b border-zinc-100 px-6 py-3 flex items-center justify-between bg-zinc-50/50">
-          <span className="text-xs font-semibold text-zinc-600">
-            {campusNeeds.length} Student Requests Active on {currentCampus.shortCode}
+        {/* Action Bar */}
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200/80">
+          <span className="text-xs font-semibold text-zinc-700">
+            {campusNeeds.length} Student Requests Looking for Items
           </span>
+
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 transition-colors shadow-xs"
+            className="flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 active:scale-95 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-all"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>{showCreateForm ? 'Close Form' : 'Post a Need Request'}</span>
+            <span>{showCreateForm ? 'Cancel Request' : 'Post What You Need'}</span>
           </button>
         </div>
 
-        {/* Create Form Drawer */}
+        {/* Create Request Drawer Form */}
         {showCreateForm && (
-          <form onSubmit={handleSubmit} className="border-b border-zinc-200 bg-amber-50/20 p-6 space-y-4">
-            <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
-              <Bell className="h-3.5 w-3.5 text-amber-600" />
-              Post What You Are Looking For
-            </h3>
+          <form onSubmit={handleSubmit} className="p-5 rounded-2xl border border-amber-200 bg-amber-50/30 space-y-4 animate-modal-in">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                <Bell className="h-4 w-4 text-amber-600" />
+                Broadcast Demand to Campus
+              </h3>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                  Item Name / Model *
-                </label>
+                <label className="font-bold text-zinc-800 block mb-1">Item You Need *</label>
                 <input
                   type="text"
                   required
                   value={itemTitle}
                   onChange={(e) => setItemTitle(e.target.value)}
-                  placeholder="e.g. Casio FX-991CW or Engineering Drawing Kit"
-                  className="w-full rounded-xl border border-zinc-300 px-3 py-2 text-xs text-zinc-900"
+                  placeholder="e.g. Casio FX-991CW under ₹900"
+                  className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs text-zinc-900 focus:border-amber-600 focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                  Max Budget (₹) *
-                </label>
+                <label className="font-bold text-zinc-800 block mb-1">Maximum Budget (₹) *</label>
                 <input
                   type="number"
                   required
                   value={maxBudget}
-                  onChange={(e) => setMaxBudget(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="850"
-                  className="w-full rounded-xl border border-zinc-300 px-3 py-2 text-xs text-zinc-900"
+                  onChange={(e) => setMaxBudget(Number(e.target.value) || '')}
+                  placeholder="900"
+                  className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs text-zinc-900 focus:border-amber-600 focus:outline-hidden font-bold"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                  Target Semester
-                </label>
-                <select
-                  value={targetSemester}
-                  onChange={(e) => setTargetSemester(Number(e.target.value))}
-                  className="w-full rounded-xl border border-zinc-300 px-3 py-2 text-xs text-zinc-900"
-                >
-                  <option value={1}>Semester 1</option>
-                  <option value={2}>Semester 2</option>
-                  <option value={3}>Semester 3</option>
-                  <option value={4}>Semester 4</option>
-                  <option value={5}>Semester 5+</option>
-                </select>
-              </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                  Acceptable Condition
-                </label>
+                <label className="font-bold text-zinc-800 block mb-1">Acceptable Condition</label>
                 <select
                   value={preferredCondition}
-                  onChange={(e) => setPreferredCondition(e.target.value as ItemCondition)}
-                  className="w-full rounded-xl border border-zinc-300 px-3 py-2 text-xs text-zinc-900"
+                  onChange={(e) => setPreferredCondition(e.target.value as any)}
+                  className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs text-zinc-900"
                 >
-                  <option value="LIKE_NEW">Like New only</option>
-                  <option value="EXCELLENT">Excellent or better</option>
-                  <option value="GOOD">Good (Fully usable)</option>
-                  <option value="FAIR">Fair (Visible wear ok)</option>
+                  <option value="LIKE_NEW">Like New</option>
+                  <option value="EXCELLENT">Excellent</option>
+                  <option value="GOOD">Good (Light wear)</option>
+                  <option value="FAIR">Fair</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                  Required By Date
-                </label>
+                <label className="font-bold text-zinc-800 block mb-1">Required By Date</label>
                 <input
                   type="date"
                   value={requiredByDate}
                   onChange={(e) => setRequiredByDate(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-300 px-3 py-2 text-xs text-zinc-900"
+                  className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs text-zinc-900"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                Context / Notes for Seniors
-              </label>
-              <input
-                type="text"
+              <label className="text-xs font-bold text-zinc-800 block mb-1">Course / Urgency Notes</label>
+              <textarea
+                rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. Needed for mid-term differential equations exam; can meet at SAC cafe."
-                className="w-full rounded-xl border border-zinc-300 px-3 py-2 text-xs text-zinc-900"
+                placeholder="e.g. Needed for upcoming Monday mid-sem exam, can meet at SAC cafe."
+                className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs text-zinc-900 focus:border-amber-600 focus:outline-hidden"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setShowCreateForm(false)}
-                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-600"
+                className="px-3 py-1.5 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-600 hover:bg-zinc-100"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-700"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white shadow-xs"
               >
-                Post Need &amp; Trigger Match
+                <Send className="h-3.5 w-3.5" />
+                <span>Publish Request</span>
               </button>
             </div>
           </form>
         )}
 
-        {/* List of Requests */}
-        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-          {campusNeeds.map((need) => {
-            const matchedListing = need.matchedListingId
-              ? listings.find((l) => l.id === need.matchedListingId)
-              : listings.find(
-                  (l) =>
-                    l.campusId === need.campusId &&
-                    l.price <= need.maxBudget &&
-                    l.title.toLowerCase().includes(need.itemTitle.toLowerCase().split(' ')[0])
-                );
-
-            const isRequester = need.buyerId === currentProfile.id;
-
-            return (
-              <div
-                key={need.id}
-                className="rounded-xl border border-zinc-200 bg-white p-4 hover:border-zinc-300 transition-all shadow-xs"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-zinc-900 text-sm">{need.itemTitle}</h4>
-                      <span className="rounded-md bg-amber-50 text-amber-800 text-[10px] font-bold px-2 py-0.5 border border-amber-200">
-                        Max Budget: ₹{need.maxBudget}
-                      </span>
-                      {need.targetSemester && (
-                        <span className="rounded-md bg-zinc-100 text-zinc-700 text-[10px] font-medium px-2 py-0.5">
-                          Sem {need.targetSemester}
-                        </span>
-                      )}
-                    </div>
-                    {need.notes && (
-                      <p className="mt-1 text-xs text-zinc-600">&ldquo;{need.notes}&rdquo;</p>
-                    )}
-                    <div className="mt-2 flex items-center gap-3 text-[11px] text-zinc-400">
-                      <span>Condition: {need.preferredCondition.replace('_', ' ')}</span>
-                      {need.requiredByDate && <span>• Needed by {need.requiredByDate}</span>}
-                      <span>• Posted by {isRequester ? 'You' : 'Student Peer'}</span>
-                    </div>
-                  </div>
-
-                  {/* Actions / Match Badge */}
-                  <div className="flex flex-col sm:items-end gap-2 shrink-0">
-                    {matchedListing ? (
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          <span>Listing Available: ₹{matchedListing.price}</span>
-                        </span>
-                        <button
-                          onClick={() => onViewListing(matchedListing.id)}
-                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors flex items-center gap-1 shadow-xs"
-                        >
-                          <span>View Match</span>
-                          <ArrowRight className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded-md">
-                          Waiting for seller
-                        </span>
-                        {!isRequester && (
-                          <button
-                            onClick={() => onCreateMatchingListing(need)}
-                            className="rounded-lg bg-zinc-900 px-3 py-1 text-xs font-semibold text-white hover:bg-zinc-800 transition-colors"
-                          >
-                            I have this! List it
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
+        {/* Requests Feed */}
+        <div className="space-y-3">
+          {campusNeeds.map((need) => (
+            <div
+              key={need.id}
+              className="p-4 rounded-2xl border border-zinc-200/80 bg-white hover:border-zinc-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 card-hover"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-sm text-zinc-900">{need.itemTitle}</span>
+                  <span className="rounded-lg bg-amber-100 text-amber-900 text-xs font-black px-2 py-0.5">
+                    Max ₹{need.maxBudget}
+                  </span>
+                  <span className="rounded-lg bg-zinc-100 text-zinc-600 text-[10px] font-semibold px-2 py-0.5">
+                    Cond: {need.preferredCondition.replace('_', ' ')}
+                  </span>
                 </div>
+
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  {need.notes || 'Looking for fellow student or senior passing this item.'}
+                </p>
+
+                {need.requiredByDate && (
+                  <span className="text-[11px] text-zinc-400 block">
+                    Needed by: {need.requiredByDate}
+                  </span>
+                )}
               </div>
-            );
-          })}
+
+              <div className="flex items-center gap-2 shrink-0">
+                {need.matchedListingId ? (
+                  <button
+                    onClick={() => onViewListing(need.matchedListingId!)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-xs"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>View Match</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onCreateMatchingListing(need)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100/80 text-xs font-bold transition-colors"
+                  >
+                    <span>I have this →</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    </div>
+    </ModalWrapper>
   );
 };

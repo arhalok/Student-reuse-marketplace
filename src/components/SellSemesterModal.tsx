@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { useMarketplace } from '@/lib/store';
+import { ModalWrapper } from '@/components/ui/ModalWrapper';
 import {
   GraduationCap,
-  X,
   Package,
   Sparkles,
   Check,
@@ -25,7 +25,7 @@ export const SellSemesterModal: React.FC<SellSemesterModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { currentProfile, createListing } = useMarketplace();
+  const { currentProfile, createListing, currentCampus } = useMarketplace();
 
   const [selectedSemester, setSelectedSemester] = useState<number>(2);
   const [bundlePrice, setBundlePrice] = useState<number>(1100);
@@ -69,155 +69,114 @@ export const SellSemesterModal: React.FC<SellSemesterModalProps> = ({
     onClose();
   };
 
-  const handleGiveAwayAll = () => {
-    createListing({
-      title: `Free Semester ${selectedSemester} Junior Gift Pack (${activeItems.length} items)`,
-      categoryId: 'cat-packs',
-      mode: 'GIVE_AWAY',
-      price: 0,
-      condition: 'GOOD',
-      isBundle: true,
-      bundleItems: activeItems.map((i) => i.name),
-      relevantSemesters: [selectedSemester],
-      description: `Passing these items down to any 1st/2nd year junior in need. Collect at Library foyer.`,
-      images: [
-        'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=600',
-      ],
-    });
-
-    onSuccess();
-    onClose();
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-zinc-200 my-8 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 bg-linear-to-r from-emerald-50 via-teal-50 to-indigo-50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
-              <GraduationCap className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-extrabold text-zinc-900 text-lg">Passed Semester? Clear Your Supplies</h2>
-                <span className="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5">
-                  Senior → Junior Loop
-                </span>
-              </div>
-              <p className="text-xs text-zinc-600">
-                You completed your semester. Juniors need these exact items right now.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Passed a Semester? Sell Your Bundle"
+      subtitle={`Curate and pass your completed coursework kit to incoming juniors on ${currentCampus.shortCode}`}
+      icon={
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <GraduationCap className="h-5 w-5" />
         </div>
-
+      }
+      maxWidth="2xl"
+    >
+      <div className="space-y-6">
         {/* Semester Selection */}
-        <div className="p-4 px-6 border-b border-zinc-100 bg-zinc-50 flex items-center justify-between">
-          <span className="text-xs font-bold text-zinc-700">Which semester did you just complete?</span>
-          <div className="flex gap-1.5">
-            {[1, 2, 3, 4].map((s) => (
+        <div>
+          <label className="text-xs font-bold text-zinc-800 mb-1.5 block">
+            Which semester did you just complete?
+          </label>
+          <div className="flex gap-2">
+            {[1, 2, 3, 4].map((sem) => (
               <button
-                key={s}
-                onClick={() => setSelectedSemester(s)}
-                className={`rounded-lg px-3 py-1 text-xs font-bold transition-all ${
-                  selectedSemester === s
-                    ? 'bg-zinc-900 text-white shadow-xs'
-                    : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+                key={sem}
+                type="button"
+                onClick={() => setSelectedSemester(sem)}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                  selectedSemester === sem
+                    ? 'bg-zinc-950 text-white shadow-2xs'
+                    : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
                 }`}
               >
-                Sem {s}
+                Semester {sem}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Items Checklist */}
-        <div className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-              Select items you no longer need:
-            </span>
-            <span className="text-xs font-bold text-emerald-700">
-              Est. Resale Value: ₹{estimatedValue}
-            </span>
-          </div>
+        {/* Items to bundle checklist */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-zinc-800 block">
+            Select items you want to include in this bundle:
+          </label>
 
           <div className="space-y-2">
             {itemsToSell.map((item, index) => (
               <div
                 key={item.name}
                 onClick={() => toggleItem(index)}
-                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                   item.checked
-                    ? 'border-emerald-300 bg-emerald-50/40 text-emerald-950'
-                    : 'border-zinc-200 bg-white text-zinc-400 opacity-60'
+                    ? 'border-emerald-300 bg-emerald-50/50 shadow-2xs'
+                    : 'border-zinc-200 bg-white text-zinc-400'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className={`h-5 w-5 rounded-md flex items-center justify-center border ${
-                      item.checked
-                        ? 'bg-emerald-600 border-emerald-600 text-white'
-                        : 'border-zinc-300 bg-white'
+                    className={`h-5 w-5 rounded-md flex items-center justify-center text-white shrink-0 ${
+                      item.checked ? 'bg-emerald-600' : 'border border-zinc-300'
                     }`}
                   >
                     {item.checked && <Check className="h-3.5 w-3.5 stroke-[3]" />}
                   </div>
-                  <span className="text-xs font-semibold text-zinc-800">{item.name}</span>
+                  <span className={`text-xs font-bold truncate ${item.checked ? 'text-zinc-900' : 'text-zinc-500'}`}>
+                    {item.name}
+                  </span>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-zinc-900">₹{item.val}</span>
-                  <div className="text-[10px] text-zinc-400 line-through">₹{item.retail} new</div>
+
+                <div className="text-right text-xs shrink-0">
+                  <span className="font-bold text-zinc-900">₹{item.val}</span>
+                  <span className="text-[10px] text-zinc-400 block line-through">₹{item.retail} new</span>
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Pricing Box */}
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span className="text-xs font-bold text-zinc-800">Bundle Price for Juniors:</span>
-              <p className="text-[11px] text-zinc-500">Sell everything in 1 pickup instead of multiple meetings</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-zinc-600">₹</span>
-              <input
-                type="number"
-                value={bundlePrice}
-                onChange={(e) => setBundlePrice(Number(e.target.value))}
-                className="w-28 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-bold text-emerald-700"
-              />
-            </div>
+        {/* Pricing Suggestion Card */}
+        <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 flex items-center justify-between text-xs">
+          <div>
+            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+              Bundle Price Recommendation
+            </span>
+            <span className="text-xs text-zinc-600">
+              Sum of items: ₹{estimatedValue} &bull; Bundle discount encourages instant sale.
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="font-bold text-zinc-700">Set Price: ₹</span>
+            <input
+              type="number"
+              value={bundlePrice}
+              onChange={(e) => setBundlePrice(Number(e.target.value) || 0)}
+              className="w-24 rounded-xl border border-emerald-300 bg-white p-2 text-sm font-black text-zinc-950 text-center"
+            />
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="border-t border-zinc-100 bg-zinc-50/70 p-4 px-6 flex flex-wrap items-center justify-between gap-3">
-          <button
-            onClick={handleGiveAwayAll}
-            className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 transition-colors"
-          >
-            <HeartHandshake className="h-4 w-4 text-emerald-600" />
-            <span>Donate / Give Away to Juniors Free</span>
-          </button>
-
-          <button
-            onClick={handlePublishBundle}
-            disabled={activeItems.length === 0}
-            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 shadow-md shadow-emerald-200 transition-colors"
-          >
-            <Package className="h-4 w-4" />
-            <span>Publish Semester {selectedSemester} Bundle (₹{bundlePrice})</span>
-          </button>
-        </div>
+        {/* Submit Button */}
+        <button
+          onClick={handlePublishBundle}
+          disabled={activeItems.length === 0}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-xs sm:text-sm font-bold text-white shadow-md shadow-emerald-600/20 disabled:opacity-40 transition-all"
+        >
+          <Sparkles className="h-4 w-4" />
+          <span>Publish Starter Pack ({activeItems.length} items for ₹{bundlePrice})</span>
+        </button>
       </div>
-    </div>
+    </ModalWrapper>
   );
 };

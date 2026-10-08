@@ -9,16 +9,25 @@ import {
   Sparkles,
   MapPin,
   BookOpen,
+  ArrowRight,
+  PlusCircle,
+  Compass,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface CampusBannerProps {
   onOpenSemesterPack: () => void;
+  onOpenCreateListing?: () => void;
+  onBrowseClick?: () => void;
 }
 
-export const CampusBanner: React.FC<CampusBannerProps> = ({ onOpenSemesterPack }) => {
+export const CampusBanner: React.FC<CampusBannerProps> = ({
+  onOpenSemesterPack,
+  onOpenCreateListing,
+  onBrowseClick,
+}) => {
   const {
     currentCampus,
-    currentProfile,
     impactStats,
     selectedSemester,
     setSelectedSemester,
@@ -33,36 +42,73 @@ export const CampusBanner: React.FC<CampusBannerProps> = ({ onOpenSemesterPack }
   ];
 
   return (
-    <div className="relative overflow-hidden border-b border-zinc-200 bg-linear-to-b from-zinc-50 to-white pt-6 pb-6">
+    <section className="relative overflow-hidden border-b border-zinc-200/90 bg-linear-to-b from-white via-zinc-50/40 to-white pt-8 pb-10">
+      {/* Background ambient lighting */}
+      <div className="absolute top-0 right-1/4 -z-10 h-64 w-64 rounded-full bg-emerald-100/40 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 -z-10 h-64 w-64 rounded-full bg-amber-100/30 blur-3xl pointer-events-none" />
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          {/* Main Campus Pitch */}
-          <div className="lg:col-span-7">
-            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100/70 px-3 py-1 text-xs font-semibold text-emerald-800 mb-3 border border-emerald-200">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Main Hero Pitch */}
+          <div className="lg:col-span-7 space-y-4">
+            {/* Campus Context Tag */}
+            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-900 border border-emerald-200/90">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Campus Verified • {currentCampus.name}</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 leading-tight">
-              Academic items move from students who completed them to students who need them next.
+            {/* Main Headline */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-zinc-950 leading-[1.12]">
+              Buy smarter. Sell faster.{' '}
+              <span className="text-emerald-700">Reuse on campus.</span>
             </h1>
-            <p className="mt-2 text-sm text-zinc-600 max-w-xl">
-              Buy directly from passing seniors. Avoid retail markups on calculators, drawing kits, lab coats, and engineering textbooks.
+
+            {/* Supporting Copy */}
+            <p className="text-sm sm:text-base text-zinc-600 max-w-xl font-normal leading-relaxed">
+              A student-first marketplace for calculators, engineering drawing kits, textbooks, lab coats, and electronics. Move items directly from students who finished them to students who need them next.
             </p>
 
-            {/* Semester Tabs */}
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-zinc-500 mr-1 flex items-center gap-1">
-                <BookOpen className="h-3.5 w-3.5" /> Filter by Semester:
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <button
+                onClick={() => {
+                  if (onBrowseClick) onBrowseClick();
+                  else {
+                    const el = document.getElementById('marketplace-catalog');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="flex items-center gap-2 rounded-xl bg-zinc-950 px-5 py-3 text-xs sm:text-sm font-bold text-white hover:bg-zinc-800 transition-all shadow-md shadow-zinc-950/10 active:scale-95"
+              >
+                <Compass className="h-4 w-4 text-emerald-400" />
+                <span>Browse Marketplace</span>
+                <ArrowRight className="h-4 w-4 ml-0.5" />
+              </button>
+
+              {onOpenCreateListing && (
+                <button
+                  onClick={onOpenCreateListing}
+                  className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-xs sm:text-sm font-bold text-zinc-800 hover:bg-zinc-50 hover:border-zinc-300 transition-all shadow-2xs active:scale-95"
+                >
+                  <PlusCircle className="h-4 w-4 text-emerald-600" />
+                  <span>Sell Something (&lt; 60s)</span>
+                </button>
+              )}
+            </div>
+
+            {/* Semester Filter Tabs */}
+            <div className="pt-2 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-zinc-400 mr-1 flex items-center gap-1">
+                <BookOpen className="h-3.5 w-3.5" /> Filter Semester:
               </span>
               {semesters.map((s) => (
                 <button
                   key={s.label}
                   onClick={() => setSelectedSemester(s.value)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
                     selectedSemester === s.value
-                      ? 'bg-zinc-900 text-white shadow-xs'
-                      : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'bg-white border border-zinc-200/90 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
                   }`}
                 >
                   {s.label}
@@ -71,54 +117,60 @@ export const CampusBanner: React.FC<CampusBannerProps> = ({ onOpenSemesterPack }
             </div>
           </div>
 
-          {/* Campus Impact Card */}
+          {/* Campus Impact & Safe Exchange Card */}
           <div className="lg:col-span-5">
-            <div className="rounded-2xl border border-emerald-100 bg-linear-to-br from-emerald-50/50 via-white to-zinc-50/50 p-5 shadow-xs">
-              <div className="flex items-center justify-between border-b border-emerald-100 pb-3">
+            <div className="rounded-3xl border border-emerald-100 bg-linear-to-br from-emerald-50/60 via-white to-zinc-50/50 p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-emerald-100/80 pb-3">
                 <div className="flex items-center gap-2">
-                  <Recycle className="h-4 w-4 text-emerald-600" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
-                    Campus Circular Impact
-                  </span>
+                  <div className="p-1.5 rounded-lg bg-emerald-600 text-white">
+                    <Recycle className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-wider text-emerald-950 block">
+                      Campus Circular Impact
+                    </span>
+                    <span className="text-[11px] text-zinc-500 font-medium">Real-time student community savings</span>
+                  </div>
                 </div>
-                <span className="text-[11px] font-medium text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-                  Real-time
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                  Live
                 </span>
               </div>
 
-              <div className="mt-3.5 grid grid-cols-3 gap-3 text-center">
-                <div className="p-2 rounded-xl bg-white border border-emerald-50 shadow-2xs">
-                  <div className="text-lg sm:text-xl font-black text-zinc-900">{impactStats.itemsReused}</div>
-                  <div className="text-[11px] text-zinc-500 font-medium">Items Reused</div>
+              {/* Impact Metric Counters */}
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-3 rounded-2xl bg-white border border-emerald-100/90 shadow-2xs">
+                  <div className="text-xl sm:text-2xl font-black text-zinc-950">{impactStats.itemsReused}</div>
+                  <div className="text-[11px] text-zinc-500 font-medium mt-0.5">Items Reused</div>
                 </div>
-                <div className="p-2 rounded-xl bg-white border border-emerald-50 shadow-2xs">
-                  <div className="text-lg sm:text-xl font-black text-emerald-600">₹{(impactStats.moneySaved / 1000).toFixed(1)}k</div>
-                  <div className="text-[11px] text-zinc-500 font-medium">Money Saved</div>
+                <div className="p-3 rounded-2xl bg-white border border-emerald-100/90 shadow-2xs">
+                  <div className="text-xl sm:text-2xl font-black text-emerald-700">₹{(impactStats.moneySaved / 1000).toFixed(1)}k</div>
+                  <div className="text-[11px] text-zinc-500 font-medium mt-0.5">Money Saved</div>
                 </div>
-                <div className="p-2 rounded-xl bg-white border border-emerald-50 shadow-2xs">
-                  <div className="text-lg sm:text-xl font-black text-zinc-800">{impactStats.co2SavedKg} kg</div>
-                  <div className="text-[11px] text-zinc-500 font-medium">CO₂ Diverted</div>
+                <div className="p-3 rounded-2xl bg-white border border-emerald-100/90 shadow-2xs">
+                  <div className="text-xl sm:text-2xl font-black text-zinc-800">{impactStats.co2SavedKg} kg</div>
+                  <div className="text-[11px] text-zinc-500 font-medium mt-0.5">CO₂ Diverted</div>
                 </div>
               </div>
 
-              {/* Fast Campus Meetup Spots info */}
-              <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-500">
+              {/* Safe Meetup Spot Callout */}
+              <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-600">
                 <div className="flex items-center gap-1.5 truncate">
-                  <MapPin className="h-3 w-3 text-emerald-600 shrink-0" />
-                  <span className="truncate">Exchange at Library Foyer & SAC Cafe</span>
+                  <MapPin className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  <span className="font-medium truncate">Safe CCTV Spots: Library Foyer &amp; SAC</span>
                 </div>
                 <button
                   onClick={onOpenSemesterPack}
-                  className="shrink-0 text-emerald-700 font-semibold hover:underline flex items-center gap-1"
+                  className="shrink-0 text-emerald-800 font-bold hover:underline flex items-center gap-1 text-xs"
                 >
-                  <Sparkles className="h-3 w-3 text-emerald-600" />
-                  <span>Sem Starter Packs</span>
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Sem Packs →</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };

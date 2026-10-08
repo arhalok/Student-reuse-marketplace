@@ -188,3 +188,22 @@ export interface SemesterPackItem {
   semester: number;
   icon: string;
 }
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  type: 'MATCH' | 'OFFER' | 'MEETUP' | 'SYSTEM' | 'PRICE_DROP';
+  read: boolean;
+  createdAt: string;
+  linkId?: string;
+  linkType?: 'LISTING' | 'NEED' | 'OFFER';
+}
+
+export interface SavedSearch {
+  id: string;
+  query: string;
+  campusId: string;
+  createdAt: string;
+}
+
