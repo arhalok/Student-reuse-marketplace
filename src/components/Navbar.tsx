@@ -22,6 +22,8 @@ import {
   Grid3X3,
   Home,
   Tag,
+  ShieldCheck,
+  Zap,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -35,8 +37,11 @@ interface NavbarProps {
   onOpenSavedItems?: () => void;
   onOpenNotifications?: () => void;
   onOpenProfileModal?: () => void;
+  onOpenTrustSafety?: () => void;
+  onOpenDemoTour?: () => void;
+  onOpenMyDashboard?: () => void;
   onNavigateSection?: (section: 'browse' | 'categories' | 'needs' | 'semester-packs') => void;
-  currentActiveTab?: 'home' | 'browse' | 'needs' | 'offers';
+  currentActiveTab?: 'home' | 'browse' | 'needs' | 'offers' | 'hub';
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -50,6 +55,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSavedItems,
   onOpenNotifications,
   onOpenProfileModal,
+  onOpenTrustSafety,
+  onOpenDemoTour,
+  onOpenMyDashboard,
   onNavigateSection,
   currentActiveTab = 'home',
 }) => {
@@ -83,7 +91,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <header className="sticky top-0 z-40 w-full border-b border-zinc-200/90 bg-white/95 backdrop-blur-md transition-all">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* LEFT: Logo & Campus Selector */}
-          <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-3 sm:gap-6">
             {/* Logo */}
             <a
               href="#"
@@ -98,7 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               <div className="text-left">
                 <div className="flex items-center gap-1.5 leading-none">
-                  <span className="font-extrabold tracking-tight text-zinc-950 text-lg">
+                  <span className="font-black tracking-tight text-zinc-950 text-lg">
                     CampuShare
                   </span>
                   <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200/80">
@@ -106,12 +114,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-zinc-400 font-medium tracking-tight mt-0.5 hidden sm:block">
-                  Buy less • Reuse more • Spend less
+                  Buy less &bull; Reuse more &bull; Spend less
                 </p>
               </div>
             </a>
 
-            {/* Campus Selector */}
+            {/* Campus Selector (Section 5 & 41 of spec) */}
             <div className="relative">
               <button
                 onClick={() => setShowCampusDropdown(!showCampusDropdown)}
@@ -162,7 +170,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className="rounded-xl px-3 py-2 hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors"
             >
-              Browse Campus
+              Browse
             </button>
             <button
               onClick={() => {
@@ -188,10 +196,30 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
               <span>Semester Packs</span>
             </button>
+            {onOpenTrustSafety && (
+              <button
+                onClick={onOpenTrustSafety}
+                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Safety &amp; Trust</span>
+              </button>
+            )}
           </nav>
 
-          {/* RIGHT: Tools, Profile & Primary Sell CTA */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* RIGHT: Tools, Evaluator Tour, Profile & Sell CTA */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Interactive Pitch Tour (Sections 37 & 38) */}
+            {onOpenDemoTour && (
+              <button
+                onClick={onOpenDemoTour}
+                className="hidden xl:flex items-center gap-1.5 rounded-xl bg-zinc-950 text-white px-3 py-1.5 text-xs font-black hover:bg-zinc-800 transition-all shadow-2xs active:scale-95"
+              >
+                <Zap className="h-3.5 w-3.5 text-emerald-400" />
+                <span>2-Min Demo Tour</span>
+              </button>
+            )}
+
             {/* Wishlist Saved Items */}
             {onOpenSavedItems && (
               <button
@@ -240,25 +268,36 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* Telemetry Dashboard (Hidden on Mobile) */}
+            {/* My CampuShare Hub (Section 28) */}
+            {onOpenMyDashboard && (
+              <button
+                onClick={onOpenMyDashboard}
+                className="hidden md:flex items-center gap-1 rounded-xl border border-zinc-200/80 bg-zinc-50/80 hover:bg-zinc-100 px-3 py-1.5 text-xs font-bold text-zinc-800 transition-colors shadow-2xs"
+              >
+                <User className="h-3.5 w-3.5 text-emerald-600" />
+                <span>My Hub</span>
+              </button>
+            )}
+
+            {/* Telemetry Dashboard */}
             {onOpenHealthDashboard && (
               <button
                 onClick={onOpenHealthDashboard}
                 aria-label="Campus Health Telemetry"
                 title="Campus Marketplace Health"
-                className="hidden xl:flex items-center justify-center h-9 w-9 rounded-xl border border-zinc-200/80 bg-white text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 transition-colors shadow-2xs"
+                className="hidden 2xl:flex items-center justify-center h-9 w-9 rounded-xl border border-zinc-200/80 bg-white text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 transition-colors shadow-2xs"
               >
                 <Activity className="h-4 w-4 text-emerald-600" />
               </button>
             )}
 
-            {/* PRIMARY SELL CTA (Desktop) */}
+            {/* PRIMARY SELL CTA (Desktop - Section 13) */}
             <button
               onClick={onOpenCreateListing}
               className="hidden sm:flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 px-3.5 sm:px-4 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/20 transition-all"
             >
               <PlusCircle className="h-4 w-4 stroke-[2.5]" />
-              <span>Sell an Item</span>
+              <span>Sell an Item (&lt; 60s)</span>
             </button>
 
             {/* Student Profile / Persona Trigger */}
@@ -288,7 +327,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               </button>
 
-              {/* Persona switch dropdown (fallback if modal not handled) */}
+              {/* Persona switch dropdown */}
               {showProfileDropdown && (
                 <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-zinc-200 bg-white p-2.5 shadow-2xl z-50 animate-modal-in">
                   <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
@@ -337,7 +376,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </header>
 
-      {/* MOBILE STICKY BOTTOM NAVIGATION BAR */}
+      {/* MOBILE STICKY BOTTOM NAVIGATION BAR (Section 30 of spec) */}
       <nav
         aria-label="Mobile Navigation"
         className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-zinc-200/90 shadow-lg px-2 py-1.5 flex items-center justify-around"
@@ -368,9 +407,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>Browse</span>
         </button>
 
-        {/* 3. Floating Distinctive SELL Action */}
+        {/* 3. Floating Distinctive SELL Action (< 60s) */}
         <button
           onClick={onOpenCreateListing}
+          aria-label="Sell an Item"
           className="-mt-5 flex flex-col items-center justify-center h-12 w-12 rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 active:scale-95 transition-all"
         >
           <PlusCircle className="h-6 w-6 stroke-[2.5]" />
@@ -385,13 +425,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>Needs</span>
         </button>
 
-        {/* 5. Offers / Negotiations */}
+        {/* 5. Hub / Offers */}
         <button
-          onClick={onOpenOffers}
+          onClick={onOpenMyDashboard ? onOpenMyDashboard : onOpenOffers}
           className="relative flex flex-col items-center gap-0.5 py-1 px-3 text-[10px] font-semibold text-zinc-500 hover:text-zinc-800 transition-colors"
         >
-          <MessageSquare className="h-4 w-4 stroke-[2.2]" />
-          <span>Offers</span>
+          <User className="h-4 w-4 stroke-[2.2]" />
+          <span>My Hub</span>
           {pendingOffersCount > 0 && (
             <span className="absolute top-0 right-2 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-bold text-white">
               {pendingOffersCount}

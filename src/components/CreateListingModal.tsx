@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   Camera,
   Layers,
+  TrendingUp,
 } from 'lucide-react';
 
 interface CreateListingModalProps {
@@ -130,6 +131,17 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     if (currentStep > 1) setCurrentStep((prev) => (prev - 1) as 1 | 2 | 3);
   };
 
+  // Section 14: Listing Quality Indicator
+  const qualityChecks = [
+    { label: 'Clear photo attached', passed: Boolean(imageUrl) },
+    { label: 'Category selected', passed: Boolean(categoryId) },
+    { label: 'Accurate condition set', passed: Boolean(condition) },
+    { label: 'Fair price specified', passed: mode === 'GIVE_AWAY' || Boolean(price) },
+    { label: 'Helpful description added', passed: description.length > 10 },
+  ];
+  const passedQualityCount = qualityChecks.filter((q) => q.passed).length;
+  const qualityPercent = Math.round((passedQualityCount / qualityChecks.length) * 100);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -170,49 +182,68 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     <ModalWrapper
       isOpen={isOpen}
       onClose={onClose}
-      title="Sell Academic Item"
-      subtitle={`Publish directly on ${currentCampus.shortCode} • Takes under 60 seconds`}
+      title="Create Campus Listing (< 60s)"
+      subtitle={`Move items directly to students on ${currentCampus.name}`}
       icon={
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <Camera className="h-5 w-5" />
+          <Zap className="h-5 w-5 fill-emerald-500 text-emerald-600" />
         </div>
-      }
-      badge={
-        <span className="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5">
-          Step {currentStep} of 3
-        </span>
       }
       maxWidth="2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Step Progress Bar */}
-        <div className="flex items-center gap-2">
-          {[1, 2, 3].map((step) => (
-            <div
-              key={step}
-              className={`h-1.5 flex-1 rounded-full transition-all ${
-                step <= currentStep ? 'bg-emerald-600' : 'bg-zinc-200'
-              }`}
-            />
-          ))}
+        {/* Step Progression Bar */}
+        <div className="flex items-center justify-between text-xs font-bold border-b border-zinc-200 pb-3">
+          <button
+            type="button"
+            onClick={() => setCurrentStep(1)}
+            className={`flex items-center gap-1.5 transition-colors ${
+              currentStep === 1 ? 'text-emerald-700' : 'text-zinc-400'
+            }`}
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-100 text-[10px]">1</span>
+            <span>Item &amp; Presets</span>
+          </button>
+          <span className="text-zinc-300">→</span>
+          <button
+            type="button"
+            onClick={() => setCurrentStep(2)}
+            className={`flex items-center gap-1.5 transition-colors ${
+              currentStep === 2 ? 'text-emerald-700' : 'text-zinc-400'
+            }`}
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-100 text-[10px]">2</span>
+            <span>Condition Checklist</span>
+          </button>
+          <span className="text-zinc-300">→</span>
+          <button
+            type="button"
+            onClick={() => setCurrentStep(3)}
+            className={`flex items-center gap-1.5 transition-colors ${
+              currentStep === 3 ? 'text-emerald-700' : 'text-zinc-400'
+            }`}
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-100 text-[10px]">3</span>
+            <span>Price &amp; Meetup Spot</span>
+          </button>
         </div>
 
-        {/* STEP 1: Photos, Title & Category */}
+        {/* STEP 1: ITEM DETAILS & 1-CLICK PRESETS */}
         {currentStep === 1 && (
           <div className="space-y-4 animate-modal-in">
-            {/* 1-Click Fast Presets */}
-            <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950 mb-2">
-                <Zap className="h-4 w-4 text-amber-600 fill-amber-500" />
-                <span>1-Click Auto-Fill Common Semester Essentials:</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
+            {/* Quick 1-Click Presets */}
+            <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-3.5 space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                <span>1-Click Popular Campus Presets:</span>
+              </span>
+              <div className="flex flex-wrap gap-1.5">
                 {SMART_PRESETS.map((p) => (
                   <button
                     key={p.title}
                     type="button"
                     onClick={() => applyPreset(p)}
-                    className="rounded-xl border border-amber-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-950 hover:bg-amber-100/70 transition-colors shadow-2xs"
+                    className="rounded-xl border border-zinc-200 bg-white px-2.5 py-1.5 text-left text-xs font-medium text-zinc-700 hover:border-emerald-500 hover:text-emerald-900 transition-colors shadow-2xs"
                   >
                     {p.title.split(' ')[0]} {p.title.split(' ')[1]}
                   </button>
@@ -220,105 +251,112 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
               </div>
             </div>
 
-            {/* Photo Preview & Dropzone */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-              <div className="sm:col-span-4 aspect-4/3 rounded-2xl overflow-hidden bg-zinc-100 border border-zinc-200 shadow-2xs">
-                <img src={imageUrl} alt="Item preview" className="h-full w-full object-cover" />
-              </div>
-              <div className="sm:col-span-8 space-y-1">
-                <label className="text-xs font-bold text-zinc-700">Image Source URL</label>
-                <input
-                  type="text"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/70 px-3 py-2 text-xs text-zinc-900 focus:border-emerald-600 focus:bg-white focus:outline-hidden"
-                />
-                <p className="text-[11px] text-zinc-400">
-                  Tip: Add clear, front-facing photos for 3x faster campus selling.
-                </p>
-              </div>
-            </div>
-
             {/* Title */}
             <div>
-              <label className="text-xs font-bold text-zinc-800 mb-1 block">What are you selling? *</label>
+              <label className="text-xs font-bold text-zinc-900 block mb-1">What are you selling / sharing?</label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Casio ClassWiz FX-991CW Calculator"
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/70 px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 focus:border-emerald-600 focus:bg-white focus:outline-hidden font-medium"
+                placeholder="e.g. Casio FX-991CW Scientific Calculator"
+                className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs text-zinc-900 focus:border-emerald-600 focus:outline-hidden"
               />
             </div>
 
             {/* Category */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="text-xs font-bold text-zinc-900 block mb-1">Category</label>
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs font-medium text-zinc-800"
+                >
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-zinc-900 block mb-1">Transaction Mode</label>
+                <select
+                  value={mode}
+                  onChange={(e) => setMode(e.target.value as TransactionMode)}
+                  className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs font-medium text-zinc-800"
+                >
+                  <option value="BUY">Direct Sale (INR)</option>
+                  <option value="EXCHANGE">Exchange / Barter ⇄</option>
+                  <option value="RENT">Weekly Rental</option>
+                  <option value="GIVE_AWAY">Free Campus Giveaway 🎁</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Photo URL */}
             <div>
-              <label className="text-xs font-bold text-zinc-800 mb-1 block">Category</label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/70 px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 focus:border-emerald-600 focus:bg-white focus:outline-hidden font-medium"
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <label className="text-xs font-bold text-zinc-900 block mb-1">Photo Image URL</label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  className="flex-1 rounded-xl border border-zinc-200 bg-white p-2.5 text-xs text-zinc-900 focus:border-emerald-600 focus:outline-hidden"
+                />
+                <div className="h-10 w-10 rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200 shrink-0">
+                  <img src={imageUrl} alt="preview" className="h-full w-full object-cover" />
+                </div>
+              </div>
             </div>
 
             {/* Description */}
             <div>
-              <label className="text-xs font-bold text-zinc-800 mb-1 block">Item Details / Notes</label>
+              <label className="text-xs font-bold text-zinc-900 block mb-1">Description &amp; Highlights</label>
               <textarea
-                rows={2}
+                rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Mention working condition, accessories included, or exam approval."
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/70 px-3.5 py-2 text-xs text-zinc-900 focus:border-emerald-600 focus:bg-white focus:outline-hidden"
+                placeholder="Mention working condition, semester used, or why you're passing it on..."
+                className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs text-zinc-900 focus:border-emerald-600 focus:outline-hidden"
               />
             </div>
           </div>
         )}
 
-        {/* STEP 2: Condition & Quality Check */}
+        {/* STEP 2: CONDITION & INSPECTION QUALITY CHECKLIST */}
         {currentStep === 2 && (
           <div className="space-y-4 animate-modal-in">
+            {/* Condition Rating */}
             <div>
-              <label className="text-xs font-bold text-zinc-800 mb-1.5 block">Item Condition</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {(['LIKE_NEW', 'EXCELLENT', 'GOOD', 'FAIR'] as ItemCondition[]).map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCondition(c)}
-                    className={`p-3 rounded-xl border text-xs font-bold transition-all ${
-                      condition === c
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-900 shadow-2xs ring-1 ring-emerald-600'
-                        : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
-                    }`}
-                  >
-                    {c.replace('_', ' ')}
-                  </button>
-                ))}
-              </div>
+              <label className="text-xs font-bold text-zinc-900 block mb-1">Physical Condition</label>
+              <select
+                value={condition}
+                onChange={(e) => setCondition(e.target.value as ItemCondition)}
+                className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs font-medium text-zinc-800"
+              >
+                <option value="LIKE_NEW">Like New (Mint, barely opened)</option>
+                <option value="EXCELLENT">Excellent (Light semester use, clean)</option>
+                <option value="GOOD">Good (Normal wear, fully functional)</option>
+                <option value="FAIR">Fair (Visible markings, works)</option>
+                <option value="FOR_PARTS">For Parts</option>
+              </select>
             </div>
 
-            {/* Dynamic Checklist based on category */}
+            {/* Calculator Inspection Tests */}
             {categoryId === 'cat-calc' && (
-              <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-3">
-                <span className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  Calculator Quality Check
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 space-y-3">
+                <span className="text-xs font-bold text-zinc-900 block">
+                  Scientific Calculator Verification Tests:
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="text-[11px] font-semibold text-zinc-600 block mb-1">Display</label>
+                    <label className="text-[11px] font-semibold text-zinc-600 block mb-1">LCD Display</label>
                     <select
                       value={calcDisplay}
-                      onChange={(e) => setCalcDisplay(e.target.value as any)}
+                      onChange={(e) => setCalcDisplay(e.target.value as 'CLEAN' | 'MINOR_SCRATCHES' | 'DEAD_PIXELS')}
                       className="w-full rounded-lg border border-zinc-200 bg-white p-2 text-xs"
                     >
                       <option value="CLEAN">Clean / No Scratches</option>
@@ -327,10 +365,10 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold text-zinc-600 block mb-1">Battery</label>
+                    <label className="text-[11px] font-semibold text-zinc-600 block mb-1">Battery Condition</label>
                     <select
                       value={calcBattery}
-                      onChange={(e) => setCalcBattery(e.target.value as any)}
+                      onChange={(e) => setCalcBattery(e.target.value as 'FRESH' | 'WORKING' | 'NEEDS_REPLACEMENT')}
                       className="w-full rounded-lg border border-zinc-200 bg-white p-2 text-xs"
                     >
                       <option value="FRESH">Fresh / New Battery</option>
@@ -342,144 +380,124 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
               </div>
             )}
 
+            {/* Book Inspection Tests */}
             {categoryId === 'cat-books' && (
-              <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-2 text-xs">
-                <span className="text-xs font-bold text-zinc-900 flex items-center gap-1.5 mb-1">
-                  <BookOpen className="h-4 w-4 text-zinc-700" />
-                  Textbook Condition Inspection
-                </span>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={missingPages}
-                    onChange={(e) => setMissingPages(e.target.checked)}
-                    className="rounded text-emerald-600"
-                  />
-                  <span>Any missing or torn pages?</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 space-y-2">
+                <span className="text-xs font-bold text-zinc-900 block">Textbook Page Integrity:</span>
+                <label className="flex items-center gap-2 text-xs text-zinc-700">
                   <input
                     type="checkbox"
                     checked={hasWriting}
                     onChange={(e) => setHasWriting(e.target.checked)}
-                    className="rounded text-emerald-600"
+                    className="rounded-sm text-emerald-600"
                   />
-                  <span>Has handwritten pencil / pen notes?</span>
+                  <span>Contains pencil notes or annotations</span>
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-zinc-700">
                   <input
                     type="checkbox"
                     checked={hasHighlighting}
                     onChange={(e) => setHasHighlighting(e.target.checked)}
-                    className="rounded text-emerald-600"
+                    className="rounded-sm text-emerald-600"
                   />
-                  <span>Has marker highlighting?</span>
+                  <span>Contains highlighter marks in key chapters</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-zinc-700">
+                  <input
+                    type="checkbox"
+                    checked={missingPages}
+                    onChange={(e) => setMissingPages(e.target.checked)}
+                    className="rounded-sm text-emerald-600"
+                  />
+                  <span>Any missing or torn pages (Checked)</span>
                 </label>
               </div>
             )}
 
-            {/* Relevant Semesters */}
-            <div>
-              <label className="text-xs font-bold text-zinc-800 mb-1.5 block">Relevant Semesters</label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4].map((sem) => (
-                  <button
-                    key={sem}
-                    type="button"
-                    onClick={() =>
-                      setSelectedSemesters((prev) =>
-                        prev.includes(sem) ? prev.filter((s) => s !== sem) : [...prev, sem]
-                      )
-                    }
-                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                      selectedSemesters.includes(sem)
-                        ? 'bg-zinc-950 text-white'
-                        : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
-                    }`}
-                  >
-                    Sem {sem}
-                  </button>
+            {/* Section 14: Quality Meter Card */}
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-emerald-950">
+                <span>Listing Quality: {qualityPercent === 100 ? 'Excellent' : 'Good'} ({qualityPercent}%)</span>
+                <span className="text-emerald-700">{passedQualityCount}/5 checks passed</span>
+              </div>
+              <div className="w-full bg-emerald-200/60 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-emerald-600 h-full rounded-full transition-all"
+                  style={{ width: `${qualityPercent}%` }}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 text-[11px] pt-1">
+                {qualityChecks.map((q, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5 text-zinc-600">
+                    <CheckCircle2 className={`h-3 w-3 ${q.passed ? 'text-emerald-600' : 'text-zinc-300'}`} />
+                    <span className={q.passed ? 'font-medium text-zinc-800' : 'text-zinc-400'}>{q.label}</span>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* STEP 3: Pricing, Mode & Safe Meetup Location */}
+        {/* STEP 3: PRICING GUIDANCE & MEETUP LOCATION */}
         {currentStep === 3 && (
           <div className="space-y-4 animate-modal-in">
-            {/* Mode Selector */}
-            <div>
-              <label className="text-xs font-bold text-zinc-800 mb-1.5 block">Listing Mode</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {[
-                  { m: 'BUY' as const, label: 'Sell (Standard)' },
-                  { m: 'EXCHANGE' as const, label: 'Exchange ⇄' },
-                  { m: 'RENT' as const, label: 'Rent Out' },
-                  { m: 'GIVE_AWAY' as const, label: 'Free Giveaway 🎁' },
-                ].map(({ m, label }) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setMode(m)}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all ${
-                      mode === m
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-1 ring-emerald-600'
-                        : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+            {/* Section 15: Smart Price Guidance Card */}
+            {mode === 'BUY' && (
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
+                    <TrendingUp className="h-4 w-4 text-emerald-600" />
+                    <span>Campus Price Guidance:</span>
+                  </span>
+                  <span className="text-xs font-bold text-emerald-700">
+                    Suggested: ₹{fairPriceEstimate.suggested}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-600">
+                  Similar {condition.toLowerCase().replace('_', ' ')} items usually sell for{' '}
+                  <strong>₹{fairPriceEstimate.min}–₹{fairPriceEstimate.max}</strong> on campus.
+                </p>
               </div>
-            </div>
+            )}
 
-            {/* Price & Fair Guidance */}
-            {mode !== 'GIVE_AWAY' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Price Inputs */}
+            {mode === 'BUY' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <label className="text-xs font-bold text-zinc-800 mb-1 block">Your Selling Price (₹) *</label>
+                  <label className="text-xs font-bold text-zinc-900 block mb-1">Your Listing Price (₹)</label>
                   <input
                     type="number"
                     required
                     value={price}
                     onChange={(e) => setPrice(Number(e.target.value) || '')}
-                    placeholder="e.g. 750"
-                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50/70 px-3.5 py-2.5 text-sm font-black text-zinc-900 focus:border-emerald-600 focus:bg-white focus:outline-hidden"
+                    className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-sm font-black text-zinc-900 focus:border-emerald-600 focus:outline-hidden"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-zinc-800 mb-1 block">Original Retail Price (₹)</label>
+                  <label className="text-xs font-bold text-zinc-900 block mb-1">Original Retail Price (₹)</label>
                   <input
                     type="number"
                     value={originalPrice}
                     onChange={(e) => setOriginalPrice(Number(e.target.value) || '')}
-                    placeholder="e.g. 1595"
-                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50/70 px-3.5 py-2.5 text-sm font-medium text-zinc-900 focus:border-emerald-600 focus:bg-white focus:outline-hidden"
+                    className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-sm font-medium text-zinc-600"
                   />
                 </div>
               </div>
             )}
 
-            {/* Fair price recommendation pill */}
-            {mode === 'BUY' && originalPrice && (
-              <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-950 flex items-center justify-between">
-                <span>Fair Campus Price Recommendation:</span>
-                <strong>₹{fairPriceEstimate.min} – ₹{fairPriceEstimate.max} (Suggested: ₹{fairPriceEstimate.suggested})</strong>
-              </div>
-            )}
-
-            {/* Safe Exchange Spot */}
+            {/* Safe CCTV Meetup Spot */}
             <div>
-              <label className="text-xs font-bold text-zinc-800 mb-1 block">Preferred Safe Meeting Spot</label>
+              <label className="text-xs font-bold text-zinc-900 block mb-1">
+                Preferred Campus CCTV Meetup Spot
+              </label>
               <select
                 value={preferredSpotId}
                 onChange={(e) => setPreferredSpotId(e.target.value)}
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/70 px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 focus:border-emerald-600 focus:bg-white focus:outline-hidden font-medium"
+                className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs font-medium text-zinc-800"
               >
                 {exchangeSpots.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} ({s.description})
+                    {s.name} ({s.isRecommended ? 'Recommended CCTV' : 'Hostel spot'})
                   </option>
                 ))}
               </select>
@@ -487,36 +505,34 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
           </div>
         )}
 
-        {/* Step Buttons */}
-        <div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
+        {/* Modal Wizard Navigation Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-zinc-200">
           {currentStep > 1 ? (
             <button
               type="button"
               onClick={handleBack}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-zinc-200 text-xs font-bold text-zinc-700 hover:bg-zinc-50"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-3.5 w-3.5" />
               <span>Back</span>
             </button>
           ) : (
-            <span />
+            <div />
           )}
 
           {currentStep < 3 ? (
             <button
               type="button"
-              disabled={!title.trim()}
               onClick={handleNext}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 disabled:opacity-40 text-xs font-bold text-white shadow-2xs"
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-xs font-bold text-white shadow-2xs"
             >
-              <span>Continue</span>
-              <ArrowRight className="h-4 w-4" />
+              <span>Next Step</span>
+              <ArrowRight className="h-3.5 w-3.5" />
             </button>
           ) : (
             <button
               type="submit"
-              disabled={!title.trim()}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-xs font-bold text-white shadow-md shadow-emerald-600/20"
+              className="flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
             >
               <Check className="h-4 w-4" />
               <span>Publish Listing to Campus</span>

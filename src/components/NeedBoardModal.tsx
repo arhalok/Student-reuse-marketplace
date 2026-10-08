@@ -188,7 +188,7 @@ export const NeedBoardModal: React.FC<NeedBoardModalProps> = ({
                 <label className="font-bold text-zinc-800 block mb-1">Acceptable Condition</label>
                 <select
                   value={preferredCondition}
-                  onChange={(e) => setPreferredCondition(e.target.value as any)}
+                  onChange={(e) => setPreferredCondition(e.target.value as ItemCondition)}
                   className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs text-zinc-900"
                 >
                   <option value="LIKE_NEW">Like New</option>

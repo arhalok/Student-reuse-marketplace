@@ -17,6 +17,9 @@ import {
   ThumbsUp,
   X,
   Sparkles,
+  Star,
+  Recycle,
+  Calendar,
 } from 'lucide-react';
 
 interface OfferModalProps {
@@ -31,6 +34,7 @@ const QUICK_REPLIES = [
   'Can we meet at Central Library?',
   'Does the keypad work smoothly?',
   'Can you do ₹50 less?',
+  'I am available at 5 PM today.',
 ];
 
 export const OfferModal: React.FC<OfferModalProps> = ({
@@ -60,9 +64,12 @@ export const OfferModal: React.FC<OfferModalProps> = ({
     listing ? listing.price - 25 : 725
   );
   const [selectedSpotId, setSelectedSpotId] = useState('spot-lib');
-  const [meetingTime, setMeetingTime] = useState('Today at 4:00 PM');
+  const [meetingTime, setMeetingTime] = useState('Today at 5:30 PM');
   const [chatInput, setChatInput] = useState('');
   const [showUpiModal, setShowUpiModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   if (!isOpen || !listing) return null;
 
@@ -92,6 +99,7 @@ export const OfferModal: React.FC<OfferModalProps> = ({
   };
 
   const relevantMessages = messages.filter((m) => m.listingId === listing.id);
+  const meetingSpot = exchangeSpots.find((s) => s.id === (currentOffer?.meetingSpotId || selectedSpotId));
 
   return (
     <ModalWrapper
@@ -100,7 +108,7 @@ export const OfferModal: React.FC<OfferModalProps> = ({
       title={
         <div className="flex items-center gap-2">
           <span className="font-extrabold text-zinc-950 text-base truncate">
-            Negotiate: {listing.title}
+            {listing.status === 'MEETING_SCHEDULED' ? 'Meetup Mode' : `Negotiate: ${listing.title}`}
           </span>
           <span className="rounded-full bg-zinc-100 text-zinc-700 text-[10px] font-bold px-2 py-0.5 uppercase shrink-0">
             {listing.status.replace('_', ' ')}
@@ -116,27 +124,27 @@ export const OfferModal: React.FC<OfferModalProps> = ({
       maxWidth="2xl"
     >
       <div className="space-y-6">
-        {/* Status Lifecycle Stepper */}
+        {/* Status Lifecycle Stepper (Section 16 of spec) */}
         <div className="p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200/80">
           <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400">
-            <span className={listing.status === 'ACTIVE' ? 'text-emerald-700' : 'text-zinc-700'}>
+            <span className={listing.status === 'ACTIVE' ? 'text-emerald-700 font-black' : 'text-zinc-600'}>
               1. Listed
             </span>
             <span>→</span>
-            <span className={listing.status === 'OFFER_RECEIVED' ? 'text-amber-700' : 'text-zinc-700'}>
-              2. Negotiate
+            <span className={listing.status === 'OFFER_RECEIVED' ? 'text-amber-700 font-black' : 'text-zinc-600'}>
+              2. Offer Sent
             </span>
             <span>→</span>
-            <span className={listing.status === 'RESERVED' ? 'text-indigo-700' : 'text-zinc-700'}>
+            <span className={listing.status === 'RESERVED' ? 'text-indigo-700 font-black' : 'text-zinc-600'}>
               3. Reserved
             </span>
             <span>→</span>
-            <span className={listing.status === 'MEETING_SCHEDULED' ? 'text-blue-700' : 'text-zinc-700'}>
-              4. Meetup Set
+            <span className={listing.status === 'MEETING_SCHEDULED' ? 'text-blue-700 font-black' : 'text-zinc-600'}>
+              4. Meetup Mode
             </span>
             <span>→</span>
-            <span className={listing.status === 'SOLD' ? 'text-emerald-700' : 'text-zinc-700'}>
-              5. Sold
+            <span className={listing.status === 'SOLD' ? 'text-emerald-700 font-black' : 'text-zinc-600'}>
+              5. Completed 🎉
             </span>
           </div>
         </div>
@@ -216,18 +224,18 @@ export const OfferModal: React.FC<OfferModalProps> = ({
               </div>
             )}
 
-            {/* If Offer is ACCEPTED or RESERVED -> Meetup Scheduler */}
+            {/* If Offer is ACCEPTED or RESERVED -> Meetup Scheduler (Section 17 of spec) */}
             {(currentOffer.status === 'ACCEPTED' || listing.status === 'RESERVED') && (
               <div className="space-y-3 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200">
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span>Offer Accepted! Schedule Safe Campus Handoff</span>
+                  <span>Reserved for Buyer! Schedule Safe Campus Meetup</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
                     <label className="text-[11px] font-semibold text-zinc-700 block mb-1">
-                      Safe CCTV Spot
+                      Designated Safe CCTV Spot
                     </label>
                     <select
                       value={selectedSpotId}
@@ -243,7 +251,7 @@ export const OfferModal: React.FC<OfferModalProps> = ({
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold text-zinc-700 block mb-1">
-                      Meetup Time
+                      Handoff Time
                     </label>
                     <input
                       type="text"
@@ -256,28 +264,47 @@ export const OfferModal: React.FC<OfferModalProps> = ({
 
                 <button
                   onClick={() => scheduleMeeting(currentOffer.id, selectedSpotId, meetingTime)}
-                  className="w-full mt-2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-xs"
+                  className="w-full mt-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-xs transition-all active:scale-98"
                 >
-                  Confirm Meeting at Spot
+                  Confirm Meeting at Spot → Enter Meetup Mode
                 </button>
               </div>
             )}
 
-            {/* If MEETING_SCHEDULED -> UPI Handoff & Completion */}
+            {/* SECTION 18 OF SPEC: DEDICATED MEETUP MODE */}
             {listing.status === 'MEETING_SCHEDULED' && (
-              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200 space-y-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-blue-900 flex items-center gap-1.5">
+              <div className="p-5 rounded-2xl bg-linear-to-br from-blue-50/90 to-indigo-50/50 border border-blue-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-blue-200/80 pb-3">
+                  <span className="font-extrabold text-blue-950 text-xs sm:text-sm flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-blue-600" />
-                    Meetup Confirmed at {exchangeSpots.find((s) => s.id === currentOffer.meetingSpotId)?.name || 'Library'}
+                    <span>Safe Meetup Mode Active</span>
                   </span>
-                  <span className="text-blue-700 font-semibold">{currentOffer.meetingTime}</span>
+                  <span className="rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5">
+                    CCTV Monitored
+                  </span>
                 </div>
 
-                <div className="pt-2 flex flex-wrap gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="bg-white p-3 rounded-xl border border-blue-100">
+                    <span className="text-[10px] font-bold uppercase text-zinc-400 block">Meetup Location</span>
+                    <strong className="text-zinc-900 text-sm block mt-0.5">{meetingSpot?.name || 'Central Library Ground Foyer'}</strong>
+                    <span className="text-[11px] text-zinc-500">Safe, public, security guards present</span>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-xl border border-blue-100">
+                    <span className="text-[10px] font-bold uppercase text-zinc-400 block">Scheduled Time</span>
+                    <strong className="text-blue-900 text-sm block mt-0.5 flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5 text-blue-600" />
+                      <span>{currentOffer.meetingTime || 'Today at 5:30 PM'}</span>
+                    </strong>
+                    <span className="text-[11px] text-zinc-500">Buyer &amp; Seller agreed</span>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex flex-wrap gap-2">
                   <button
                     onClick={() => setShowUpiModal(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-950 text-white text-xs font-bold shadow-2xs hover:bg-zinc-800"
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-950 text-white text-xs font-bold shadow-md hover:bg-zinc-800 transition-all active:scale-95"
                   >
                     <QrCode className="h-4 w-4 text-emerald-400" />
                     <span>Scan UPI QR Code (₹{currentOffer.counterAmount || currentOffer.offeredAmount})</span>
@@ -286,9 +313,8 @@ export const OfferModal: React.FC<OfferModalProps> = ({
                   <button
                     onClick={() => {
                       completeTransaction(currentOffer.id);
-                      onClose();
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs"
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95"
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     <span>Handoff Complete (Mark Sold)</span>
@@ -297,13 +323,57 @@ export const OfferModal: React.FC<OfferModalProps> = ({
               </div>
             )}
 
-            {/* If COMPLETED / SOLD */}
+            {/* SECTION 19 OF SPEC: POST-TRANSACTION EXPERIENCE & REVIEW */}
             {currentOffer.status === 'COMPLETED' && (
-              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-                <span>
-                  <strong>Transaction Completed!</strong> Item marked sold. Campus circular economy savings credited.
-                </span>
+              <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 space-y-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                  <span className="font-extrabold text-sm text-emerald-950">Exchange completed 🎉</span>
+                </div>
+                <p className="text-zinc-600 leading-relaxed">
+                  Congratulations! This item has been successfully reused on {currentCampus.name}. Academic waste avoided: ~4.2 kg CO₂.
+                </p>
+
+                {/* Star review form */}
+                {!reviewSubmitted ? (
+                  <div className="bg-white p-3.5 rounded-xl border border-emerald-200 space-y-2">
+                    <span className="font-bold text-zinc-900 block">Leave a quick review for the senior:</span>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          className="p-1 text-amber-400 hover:text-amber-500 transition-colors"
+                        >
+                          <Star className={`h-5 w-5 ${star <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-zinc-200'}`} />
+                        </button>
+                      ))}
+                      <span className="text-xs font-bold text-zinc-700 ml-2">{reviewRating}.0 / 5.0</span>
+                    </div>
+
+                    <input
+                      type="text"
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="e.g. Great condition, punctual at library meetup!"
+                      className="w-full rounded-lg border border-zinc-200 p-2 text-xs text-zinc-900"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setReviewSubmitted(true)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-500 shadow-2xs"
+                    >
+                      Submit Review
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-lg bg-white border border-emerald-200 text-emerald-800 font-bold text-xs flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span>Review submitted! Campus reputation score updated.</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -347,16 +417,16 @@ export const OfferModal: React.FC<OfferModalProps> = ({
           </form>
         )}
 
-        {/* Commerce Chat Thread */}
+        {/* Section 20 of spec: Commerce Chat Thread */}
         <div className="space-y-3 pt-2 border-t border-zinc-100">
           <div className="flex items-center justify-between text-xs">
             <span className="font-bold uppercase tracking-wider text-zinc-400">
-              Commerce Chat &amp; Queries
+              Campus Chat &amp; Negotiation
             </span>
             <span className="text-zinc-400 text-[11px]">{relevantMessages.length} messages</span>
           </div>
 
-          {/* Quick Commerce Queries */}
+          {/* Quick Replies */}
           <div className="flex flex-wrap gap-1.5">
             {QUICK_REPLIES.map((reply) => (
               <button
@@ -433,13 +503,13 @@ export const OfferModal: React.FC<OfferModalProps> = ({
               </div>
 
               <div>
-                <h3 className="font-extrabold text-zinc-950 text-base">Direct UPI Handoff</h3>
+                <h3 className="font-extrabold text-zinc-950 text-base">Direct Peer UPI QR</h3>
                 <p className="text-xs text-zinc-500 mt-1">
-                  Pay directly to seller at meeting spot. Never pay advance.
+                  Pay directly to senior at meeting spot after inspecting condition.
                 </p>
               </div>
 
-              {/* Simulated QR Code Graphic */}
+              {/* QR Code Graphic */}
               <div className="mx-auto p-4 bg-zinc-50 border border-zinc-200 rounded-2xl w-48 h-48 flex flex-col items-center justify-center gap-2">
                 <div className="w-36 h-36 border-4 border-zinc-900 rounded-xl flex items-center justify-center p-2 bg-white">
                   <div className="grid grid-cols-4 gap-1.5 w-full h-full">
@@ -456,7 +526,7 @@ export const OfferModal: React.FC<OfferModalProps> = ({
               </div>
 
               <div className="text-xs">
-                <span className="text-zinc-500 block">Amount Due:</span>
+                <span className="text-zinc-500 block">Amount:</span>
                 <span className="text-xl font-black text-zinc-950">
                   ₹{currentOffer?.counterAmount || currentOffer?.offeredAmount || listing.price}
                 </span>
@@ -467,7 +537,6 @@ export const OfferModal: React.FC<OfferModalProps> = ({
                 onClick={() => {
                   setShowUpiModal(false);
                   if (currentOffer) completeTransaction(currentOffer.id);
-                  onClose();
                 }}
                 className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-xs"
               >

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Listing, ItemCondition } from '@/lib/types';
+import { Listing } from '@/lib/types';
 import { useMarketplace } from '@/lib/store';
 import { INITIAL_PROFILES } from '@/lib/mock-data';
 import { ModalWrapper } from '@/components/ui/ModalWrapper';
@@ -17,6 +17,10 @@ import {
   AlertCircle,
   Flag,
   Heart,
+  Star,
+  Camera,
+  MessageSquare,
+  QrCode,
 } from 'lucide-react';
 
 interface ListingDetailsModalProps {
@@ -163,9 +167,32 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
             {spot && (
               <div className="mt-4 p-2.5 rounded-xl bg-zinc-50 border border-zinc-200/80 flex items-center gap-2 text-xs text-zinc-600">
                 <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span className="truncate">Safe Meeting: <strong>{spot.name}</strong></span>
+                <span className="truncate">Safe Meeting Spot: <strong>{spot.name}</strong></span>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Structured Trust Information (Section 10 of spec) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+          <div className="bg-zinc-50 p-2.5 rounded-xl border border-zinc-200/80">
+            <span className="text-zinc-400 text-[10px] block font-bold uppercase">Condition</span>
+            <strong className="text-zinc-900">{listing.condition.replace('_', ' ')}</strong>
+          </div>
+          <div className="bg-zinc-50 p-2.5 rounded-xl border border-zinc-200/80">
+            <span className="text-zinc-400 text-[10px] block font-bold uppercase">Seller Rating</span>
+            <strong className="text-amber-600 flex items-center gap-1">
+              <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+              <span>4.9 &bull; Senior</span>
+            </strong>
+          </div>
+          <div className="bg-zinc-50 p-2.5 rounded-xl border border-zinc-200/80">
+            <span className="text-zinc-400 text-[10px] block font-bold uppercase">Campus</span>
+            <strong className="text-zinc-900 truncate block">{currentCampus.shortCode}</strong>
+          </div>
+          <div className="bg-zinc-50 p-2.5 rounded-xl border border-zinc-200/80">
+            <span className="text-zinc-400 text-[10px] block font-bold uppercase">Exchange Point</span>
+            <strong className="text-zinc-900 truncate block">{spot?.name || 'Library'}</strong>
           </div>
         </div>
 
@@ -176,24 +203,6 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
             {listing.description || 'No additional notes provided by seller.'}
           </p>
         </div>
-
-        {/* Bundle Items Checklist if bundle */}
-        {listing.isBundle && listing.bundleItems && (
-          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4">
-            <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5 mb-2.5">
-              <Package className="h-4 w-4 text-indigo-600" />
-              Included Course Bundle Essentials:
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-700">
-              {listing.bundleItems.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-indigo-100">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                  <span className="font-medium truncate">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Calculator Inspection Checklist */}
         {listing.calculatorInspection && (
@@ -255,10 +264,36 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
           </div>
         )}
 
-        {/* Verified Seller Trust Card */}
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4 space-y-3">
+        {/* Section 47 of spec: "What happens next?" Visual Handoff Preview */}
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 space-y-2.5">
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
+            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            <span>How This Exchange Works (Safe Campus Loop)</span>
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+            <div className="bg-white p-2.5 rounded-xl border border-emerald-100">
+              <span className="font-extrabold text-emerald-800 block">1. Make Offer</span>
+              <span className="text-[11px] text-zinc-500">Propose a fair price</span>
+            </div>
+            <div className="bg-white p-2.5 rounded-xl border border-emerald-100">
+              <span className="font-extrabold text-emerald-800 block">2. Accepted</span>
+              <span className="text-[11px] text-zinc-500">Item reserved for you</span>
+            </div>
+            <div className="bg-white p-2.5 rounded-xl border border-emerald-100">
+              <span className="font-extrabold text-emerald-800 block">3. Meet at Spot</span>
+              <span className="text-[11px] text-zinc-500">Library Foyer / CCTV</span>
+            </div>
+            <div className="bg-white p-2.5 rounded-xl border border-emerald-100">
+              <span className="font-extrabold text-emerald-800 block">4. Inspect &amp; UPI</span>
+              <span className="text-[11px] text-zinc-500">Pay only in person</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Verified Seller Trust Card (Section 11 of spec) */}
+        <div className="rounded-2xl border border-zinc-200/90 bg-white p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
               Verified Campus Seller
             </span>
             <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
@@ -277,20 +312,20 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
                 <span>{seller.fullName}</span>
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 fill-emerald-100" />
               </div>
-              <div className="text-xs text-zinc-500">{seller.degreeProgram}</div>
+              <div className="text-xs text-zinc-500">{seller.degreeProgram} &bull; {currentCampus.shortCode}</div>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="bg-white p-2 rounded-xl border border-emerald-100">
+            <div className="bg-zinc-50 p-2 rounded-xl border border-zinc-200/70">
               <div className="font-bold text-zinc-900">{seller.successfulTransactions}</div>
               <div className="text-[10px] text-zinc-500">Successful Reuses</div>
             </div>
-            <div className="bg-white p-2 rounded-xl border border-emerald-100">
+            <div className="bg-zinc-50 p-2 rounded-xl border border-zinc-200/70">
               <div className="font-bold text-emerald-700">{seller.responseRatePercent}%</div>
               <div className="text-[10px] text-zinc-500">Response Rate</div>
             </div>
-            <div className="bg-white p-2 rounded-xl border border-emerald-100">
+            <div className="bg-zinc-50 p-2 rounded-xl border border-zinc-200/70">
               <div className="font-bold text-zinc-800">{seller.avgResponseMinutes} min</div>
               <div className="text-[10px] text-zinc-500">Avg Reply Time</div>
             </div>

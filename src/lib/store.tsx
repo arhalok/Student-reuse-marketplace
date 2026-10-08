@@ -229,23 +229,26 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
 
   // Load from localStorage on client mount if available
   useEffect(() => {
-    try {
-      const savedListings = localStorage.getItem('srm_listings');
-      if (savedListings) setListings(JSON.parse(savedListings));
+    const timer = setTimeout(() => {
+      try {
+        const savedListings = localStorage.getItem('srm_listings');
+        if (savedListings) setListings(JSON.parse(savedListings));
 
-      const savedNeeds = localStorage.getItem('srm_needs');
-      if (savedNeeds) setNeedRequests(JSON.parse(savedNeeds));
+        const savedNeeds = localStorage.getItem('srm_needs');
+        if (savedNeeds) setNeedRequests(JSON.parse(savedNeeds));
 
-      const savedOffers = localStorage.getItem('srm_offers');
-      if (savedOffers) setOffers(JSON.parse(savedOffers));
+        const savedOffers = localStorage.getItem('srm_offers');
+        if (savedOffers) setOffers(JSON.parse(savedOffers));
 
-      const savedProfileId = localStorage.getItem('srm_profile_id');
-      if (savedProfileId && INITIAL_PROFILES[savedProfileId]) {
-        setProfileState(INITIAL_PROFILES[savedProfileId]);
+        const savedProfileId = localStorage.getItem('srm_profile_id');
+        if (savedProfileId && INITIAL_PROFILES[savedProfileId]) {
+          setProfileState(INITIAL_PROFILES[savedProfileId]);
+        }
+      } catch {
+        // ignore storage errors
       }
-    } catch {
-      // ignore storage errors
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Save changes

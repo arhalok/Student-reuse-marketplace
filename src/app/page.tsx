@@ -12,8 +12,9 @@ import { NeedBoardSpotlight } from '@/components/NeedBoardSpotlight';
 import { SemesterPackBanner } from '@/components/SemesterPackBanner';
 import { SafeCampusExchangeSection } from '@/components/SafeCampusExchangeSection';
 import { HowItWorksSection } from '@/components/HowItWorksSection';
+import { RecentlyViewedSection } from '@/components/RecentlyViewedSection';
 
-// Modals
+// Modals & Enhanced Features
 import { CreateListingModal } from '@/components/CreateListingModal';
 import { NeedBoardModal } from '@/components/NeedBoardModal';
 import { SemesterPackModal } from '@/components/SemesterPackModal';
@@ -27,6 +28,9 @@ import { StudentProfileModal } from '@/components/StudentProfileModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { ReportModal } from '@/components/ReportModal';
 import { CampusHealthDashboardModal } from '@/components/CampusHealthDashboardModal';
+import { TrustSafetyModal } from '@/components/TrustSafetyModal';
+import { MyDashboardModal } from '@/components/MyDashboardModal';
+import { InteractiveDemoTour } from '@/components/InteractiveDemoTour';
 import { Toast } from '@/components/ui/Toast';
 
 import {
@@ -46,6 +50,10 @@ import {
   Flame,
   Tag,
   BookOpen,
+  Zap,
+  Bookmark,
+  ShieldCheck,
+  PlusCircle,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -66,6 +74,8 @@ export default function HomePage() {
     sortOption,
     setSortOption,
     savedListingIds,
+    addToRecentlyViewed,
+    saveSearch,
     resetData,
   } = useMarketplace();
 
@@ -83,6 +93,9 @@ export default function HomePage() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
+  const [showTrustSafetyModal, setShowTrustSafetyModal] = useState(false);
+  const [showMyDashboardModal, setShowMyDashboardModal] = useState(false);
+  const [showDemoTour, setShowDemoTour] = useState(false);
   const [reportListingTarget, setReportListingTarget] = useState<Listing | null>(null);
 
   // Selected item modal state
@@ -90,15 +103,18 @@ export default function HomePage() {
   const [offerListing, setOfferListing] = useState<Listing | null>(null);
   const [activeOfferForModal, setActiveOfferForModal] = useState<Offer | null>(null);
 
-  // Mobile filters sheet state
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-
   // Quick toast state
   const [toastData, setToastData] = useState<{ message: string; title?: string } | null>(null);
 
   const showToast = (message: string, title?: string) => {
     setToastData({ message, title });
     setTimeout(() => setToastData(null), 5000);
+  };
+
+  // Inspect listing helper (logs to recently viewed)
+  const handleInspectListing = (item: Listing) => {
+    addToRecentlyViewed(item.id);
+    setSelectedListing(item);
   };
 
   // 1. Filter listings
@@ -167,24 +183,41 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-zinc-50/60 text-zinc-950 flex flex-col font-sans antialiased pb-20 sm:pb-0">
-      {/* Top Demo Simulation Banner */}
+      {/* Top Evaluator & Demo Simulation Bar */}
       <aside aria-label="Demo Bar" className="bg-zinc-950 text-white text-xs px-4 py-2 border-b border-zinc-800">
         <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 text-[10px] border border-emerald-500/30">
-              Campus Simulation
+              Campus Live
             </span>
             <span className="text-zinc-300">
-              Signed in as <strong>{currentProfile.fullName}</strong> ({currentProfile.degreeProgram}).
+              Logged into <strong>{currentCampus.name}</strong> as <strong>{currentProfile.fullName}</strong>.
             </span>
           </div>
+
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowDemoTour(true)}
+              className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 text-[11px] bg-emerald-950/70 px-2 py-0.5 rounded-lg border border-emerald-800"
+            >
+              <Zap className="h-3 w-3" />
+              <span>2-Min Demo Tour</span>
+            </button>
+
+            <button
+              onClick={() => setShowTrustSafetyModal(true)}
+              className="text-zinc-400 hover:text-white text-[11px] underline hidden sm:inline"
+            >
+              Safety Rules
+            </button>
+
             <button
               onClick={() => setShowProfileModal(true)}
               className="text-zinc-400 hover:text-white text-[11px] underline"
             >
               Switch Persona
             </button>
+
             <button
               onClick={resetData}
               className="text-zinc-400 hover:text-white flex items-center gap-1 text-[11px] underline"
@@ -195,7 +228,7 @@ export default function HomePage() {
         </div>
       </aside>
 
-      {/* Global Navigation (Desktop Header + Mobile Bottom Bar) */}
+      {/* Global Navigation Header & Mobile Bottom Bar */}
       <Navbar
         onOpenCreateListing={() => {
           setCreateModalPrefill({ title: '' });
@@ -210,6 +243,9 @@ export default function HomePage() {
         onOpenProfileModal={() => setShowProfileModal(true)}
         onOpenOnboarding={() => setShowOnboardingModal(true)}
         onOpenHealthDashboard={() => setShowHealthModal(true)}
+        onOpenTrustSafety={() => setShowTrustSafetyModal(true)}
+        onOpenDemoTour={() => setShowDemoTour(true)}
+        onOpenMyDashboard={() => setShowMyDashboardModal(true)}
       />
 
       {/* Toast Alert */}
@@ -221,12 +257,17 @@ export default function HomePage() {
         />
       )}
 
-      {/* 1. Hero & Campus Sustainability Banner */}
+      {/* 1. Hero & Campus Circular Economy Banner */}
       <CampusBanner
         onOpenSemesterPack={() => setShowSemesterPackModal(true)}
         onOpenCreateListing={() => {
           setCreateModalPrefill({ title: '' });
           setShowCreateModal(true);
+        }}
+        onOpenNeedBoard={() => setShowNeedBoardModal(true)}
+        onBrowseClick={() => {
+          const el = document.getElementById('marketplace-catalog');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
         }}
       />
 
@@ -236,7 +277,9 @@ export default function HomePage() {
         <IntelligentSearch />
 
         {/* 3. Category Discovery Grid */}
-        <CategoryGrid />
+        <div id="categories-section">
+          <CategoryGrid />
+        </div>
 
         {/* 4. Need Board Spotlight (Reverse Demand Engine) */}
         <NeedBoardSpotlight
@@ -271,7 +314,7 @@ export default function HomePage() {
                 <ListingCard
                   key={`deal-${listing.id}`}
                   listing={listing}
-                  onSelect={(item) => setSelectedListing(item)}
+                  onSelect={handleInspectListing}
                   onMakeOffer={(item) => {
                     setOfferListing(item);
                     setActiveOfferForModal(null);
@@ -330,7 +373,16 @@ export default function HomePage() {
                 <span className="font-bold text-zinc-400 hidden sm:inline">Sort:</span>
                 <select
                   value={sortOption}
-                  onChange={(e) => setSortOption(e.target.value as any)}
+                  onChange={(e) =>
+                    setSortOption(
+                      e.target.value as
+                        | 'RECOMMENDED'
+                        | 'NEWEST'
+                        | 'PRICE_LOW'
+                        | 'PRICE_HIGH'
+                        | 'BEST_SAVINGS'
+                    )
+                  }
                   className="rounded-xl border border-zinc-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 shadow-2xs focus:border-emerald-600 focus:outline-hidden"
                 >
                   <option value="RECOMMENDED">Recommended</option>
@@ -343,25 +395,36 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Results Grid / Empty State */}
+          {/* Section 7 of Spec: Results Grid / Graceful NO-RESULT EXPERIENCE */}
           {sortedListings.length === 0 ? (
-            <div className="rounded-3xl border border-zinc-200 bg-white p-12 text-center space-y-4">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-400">
+            <div className="rounded-3xl border border-amber-200/80 bg-linear-to-b from-amber-50/40 via-white to-amber-50/20 p-10 sm:p-14 text-center space-y-4">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 shadow-xs">
                 <Compass className="h-7 w-7" />
               </div>
-              <div className="font-extrabold text-zinc-950 text-base">
-                No items found matching your filters
+              <div className="font-black text-zinc-950 text-xl tracking-tight">
+                We couldn&apos;t find that yet.
               </div>
-              <p className="text-xs sm:text-sm text-zinc-500 max-w-md mx-auto">
-                No active listing found. Post a request on the <strong>Need Board</strong> so passing seniors know you need it!
+              <p className="text-xs sm:text-sm text-zinc-600 max-w-lg mx-auto leading-relaxed">
+                Campus inventory moves fast as courses begin and end. Tell passing seniors what you&apos;re looking for, and CampuShare will connect you directly when someone lists it.
               </p>
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-3">
                 <button
                   onClick={() => setShowNeedBoardModal(true)}
-                  className="rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-amber-700 shadow-xs"
+                  className="rounded-xl bg-amber-600 px-5 py-3 text-xs font-bold text-white hover:bg-amber-500 shadow-md shadow-amber-600/20 active:scale-95 transition-all"
                 >
-                  Post on Need Board
+                  Post on Need Board (1-Click)
                 </button>
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      saveSearch(searchQuery);
+                      showToast(`We will alert you when "${searchQuery}" is listed on campus.`, 'Search Saved');
+                    }}
+                    className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-bold text-zinc-800 hover:bg-zinc-50 shadow-2xs"
+                  >
+                    Save This Search &amp; Notify Me
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setSearchQuery('');
@@ -369,7 +432,7 @@ export default function HomePage() {
                     setSelectedMode('ALL');
                     setSelectedSemester('ALL');
                   }}
-                  className="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50"
+                  className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-bold text-zinc-700 hover:bg-zinc-50"
                 >
                   Reset All Filters
                 </button>
@@ -381,7 +444,7 @@ export default function HomePage() {
                 <ListingCard
                   key={listing.id}
                   listing={listing}
-                  onSelect={(item) => setSelectedListing(item)}
+                  onSelect={handleInspectListing}
                   onMakeOffer={(item) => {
                     setOfferListing(item);
                     setActiveOfferForModal(null);
@@ -392,16 +455,25 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* 7. Semester Starter Pack Bundle Experience */}
+        {/* 7. Recently Viewed & Recommendations (Sections 23 & 24) */}
+        <RecentlyViewedSection
+          onSelectListing={handleInspectListing}
+          onMakeOffer={(item) => {
+            setOfferListing(item);
+            setActiveOfferForModal(null);
+          }}
+        />
+
+        {/* 8. Semester Starter Pack Bundle Experience */}
         <SemesterPackBanner
           onOpenSemesterPack={() => setShowSemesterPackModal(true)}
           onOpenSellSemester={() => setShowSellSemesterModal(true)}
         />
 
-        {/* 8. Safe Campus Exchange Section */}
+        {/* 9. Safe Campus Exchange Section */}
         <SafeCampusExchangeSection />
 
-        {/* 9. How Campus Reuse Works */}
+        {/* 10. How Campus Reuse Works */}
         <HowItWorksSection
           onOpenCreateListing={() => {
             setCreateModalPrefill({ title: '' });
@@ -409,8 +481,8 @@ export default function HomePage() {
           }}
         />
 
-        {/* 10. Final Call to Action */}
-        <section className="rounded-3xl border border-zinc-200 bg-zinc-950 text-white p-8 sm:p-10 text-center space-y-4">
+        {/* 11. Final Call to Action */}
+        <section className="rounded-3xl border border-zinc-200 bg-zinc-950 text-white p-8 sm:p-12 text-center space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 text-emerald-400 px-3 py-1 text-xs font-bold border border-emerald-500/30">
             <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
             <span>Join Your Campus Circular Community</span>
@@ -455,13 +527,34 @@ export default function HomePage() {
             <span>&bull; Campus-First Student Reuse Marketplace</span>
           </div>
 
+          <div className="flex items-center gap-4 text-xs">
+            <button
+              onClick={() => setShowTrustSafetyModal(true)}
+              className="hover:text-zinc-900 underline"
+            >
+              Trust &amp; Safety Guidelines
+            </button>
+            <button
+              onClick={() => setShowDemoTour(true)}
+              className="hover:text-zinc-900 underline"
+            >
+              Demo Walkthrough
+            </button>
+            <button
+              onClick={() => setShowHealthModal(true)}
+              className="hover:text-zinc-900 underline"
+            >
+              Campus Health Telemetry
+            </button>
+          </div>
+
           <div className="text-center sm:text-right text-[11px] text-zinc-400">
             Core thesis: <em>Buy less. Reuse more. Spend less.</em> &bull; Running on {currentCampus.name}
           </div>
         </div>
       </footer>
 
-      {/* ALL MODALS (Standardized Modal System) */}
+      {/* ALL MODALS & INTERACTIVE OVERLAYS */}
       <CreateListingModal
         isOpen={showCreateModal}
         prefilledTitle={createModalPrefill.title}
@@ -484,7 +577,7 @@ export default function HomePage() {
         onClose={() => setShowNeedBoardModal(false)}
         onViewListing={(listingId) => {
           const l = listings.find((item) => item.id === listingId);
-          if (l) setSelectedListing(l);
+          if (l) handleInspectListing(l);
           setShowNeedBoardModal(false);
         }}
         onCreateMatchingListing={(need) => {
@@ -546,7 +639,7 @@ export default function HomePage() {
         isOpen={showSavedItemsModal}
         onClose={() => setShowSavedItemsModal(false)}
         onSelectListing={(listing) => {
-          setSelectedListing(listing);
+          handleInspectListing(listing);
         }}
       />
 
@@ -583,6 +676,47 @@ export default function HomePage() {
       <CampusHealthDashboardModal
         isOpen={showHealthModal}
         onClose={() => setShowHealthModal(false)}
+      />
+
+      <TrustSafetyModal
+        isOpen={showTrustSafetyModal}
+        onClose={() => setShowTrustSafetyModal(false)}
+        onOpenReport={() => {
+          setReportListingTarget(listings[0] || null);
+        }}
+      />
+
+      <MyDashboardModal
+        isOpen={showMyDashboardModal}
+        onClose={() => setShowMyDashboardModal(false)}
+        onSelectListing={handleInspectListing}
+        onOpenOffer={(offer, listing) => {
+          setOfferListing(listing);
+          setActiveOfferForModal(offer);
+        }}
+        onOpenCreateListing={() => {
+          setCreateModalPrefill({ title: '' });
+          setShowCreateModal(true);
+        }}
+        onOpenNeedBoard={() => setShowNeedBoardModal(true)}
+        onOpenSavedItems={() => setShowSavedItemsModal(true)}
+      />
+
+      {/* Evaluator 2-Minute Demo Tour (Sections 37 & 38) */}
+      <InteractiveDemoTour
+        isOpen={showDemoTour}
+        onClose={() => setShowDemoTour(false)}
+        onInspectListing={handleInspectListing}
+        onOpenOffer={(item) => {
+          setOfferListing(item);
+          setActiveOfferForModal(null);
+        }}
+        onOpenNeedBoard={() => setShowNeedBoardModal(true)}
+        onOpenCreateListing={(prefillTitle, prefillBudget) => {
+          setCreateModalPrefill({ title: prefillTitle, budget: prefillBudget });
+          setShowCreateModal(true);
+        }}
+        onOpenHealthDashboard={() => setShowHealthModal(true)}
       />
     </div>
   );

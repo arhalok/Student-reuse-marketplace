@@ -12,6 +12,7 @@ import {
   BookOpen,
   ArrowRight,
   ShieldCheck,
+  Star,
 } from 'lucide-react';
 
 interface ListingCardProps {
@@ -153,7 +154,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
               <span className="text-lg sm:text-xl font-black text-zinc-950">₹{listing.price}</span>
               {listing.originalNewPrice && (
                 <span className="text-xs text-zinc-400 line-through">
-                  ₹{listing.originalNewPrice}
+                  ₹{listing.originalNewPrice} new
                 </span>
               )}
             </div>
@@ -171,8 +172,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({
         {listing.calculatorInspection && (
           <div className="mt-2 flex items-center gap-1.5 text-[10px] text-zinc-500 font-medium">
             <span className="text-emerald-700 font-bold">✓ Tested</span>
-            <span>• {listing.calculatorInspection.displayCondition.replace('_', ' ').toLowerCase()} LCD</span>
-            <span>• {listing.calculatorInspection.batteryCondition.toLowerCase()} battery</span>
+            <span>&bull; {listing.calculatorInspection.displayCondition.replace('_', ' ').toLowerCase()} LCD</span>
+            <span>&bull; {listing.calculatorInspection.batteryCondition.toLowerCase()} battery</span>
           </div>
         )}
 
@@ -183,12 +184,12 @@ export const ListingCard: React.FC<ListingCardProps> = ({
             ) : (
               <span className="text-emerald-700 font-bold">✓ Complete</span>
             )}
-            {listing.bookInspection.edition && <span>• {listing.bookInspection.edition}</span>}
-            {listing.bookInspection.hasWriting && <span>• Notes</span>}
+            {listing.bookInspection.edition && <span>&bull; {listing.bookInspection.edition}</span>}
+            {listing.bookInspection.hasWriting && <span>&bull; Notes</span>}
           </div>
         )}
 
-        {/* Campus Location & Exchange Spot */}
+        {/* Campus Location & Safe CCTV Spot */}
         {spot && (
           <div className="mt-2.5 flex items-center justify-between text-[11px] text-zinc-500">
             <div className="flex items-center gap-1 truncate">
@@ -205,10 +206,17 @@ export const ListingCard: React.FC<ListingCardProps> = ({
 
         {/* Bottom Card Footer */}
         <div className="mt-auto pt-3 border-t border-zinc-100 flex items-center justify-between gap-2">
-          {/* Seller Trust Tag */}
+          {/* Seller Trust Tag with 4.9 ★ Rating */}
           <div className="flex items-center gap-1.5 truncate text-xs">
-            <span className="font-semibold text-zinc-800 truncate">
-              {isOwner ? 'Your Listing' : 'Verified Senior'}
+            <span className="font-semibold text-zinc-800 truncate flex items-center gap-1">
+              {isOwner ? (
+                'Your Listing'
+              ) : (
+                <>
+                  <span className="text-amber-500">★ 4.9</span>
+                  <span>Senior</span>
+                </>
+              )}
             </span>
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
           </div>

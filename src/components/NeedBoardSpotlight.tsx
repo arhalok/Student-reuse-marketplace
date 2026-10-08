@@ -10,6 +10,7 @@ import {
   Clock,
   Sparkles,
   Calendar,
+  Users,
 } from 'lucide-react';
 
 interface NeedBoardSpotlightProps {
@@ -47,7 +48,7 @@ export const NeedBoardSpotlight: React.FC<NeedBoardSpotlightProps> = ({
               </span>
             </div>
             <p className="text-xs text-amber-800/80 font-normal">
-              Demand before supply: Seniors who pass these items can connect directly
+              Demand before supply: Graduating seniors pass their essentials directly to juniors who need them
             </p>
           </div>
         </div>
@@ -61,42 +62,50 @@ export const NeedBoardSpotlight: React.FC<NeedBoardSpotlightProps> = ({
         </button>
       </div>
 
-      {/* Cards Grid */}
+      {/* Cards Grid (Section 8 of spec) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-        {activeCampusNeeds.slice(0, 3).map((need) => (
-          <div
-            key={need.id}
-            className="flex flex-col justify-between rounded-2xl border border-amber-200/90 bg-white p-4 shadow-2xs hover:border-amber-300 transition-all card-hover"
-          >
-            <div>
-              <div className="flex items-start justify-between gap-2">
-                <span className="font-extrabold text-sm text-zinc-900 line-clamp-1">
-                  {need.itemTitle}
-                </span>
-                <span className="rounded-lg bg-amber-100 text-amber-950 text-xs font-black px-2 py-0.5 shrink-0">
-                  Max ₹{need.maxBudget}
-                </span>
+        {activeCampusNeeds.slice(0, 3).map((need, idx) => {
+          const studentsLookingCount = idx === 0 ? 4 : idx === 1 ? 2 : 3;
+          return (
+            <div
+              key={need.id}
+              className="flex flex-col justify-between rounded-2xl border border-amber-200/90 bg-white p-4 shadow-2xs hover:border-amber-300 transition-all card-hover"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-extrabold text-sm text-zinc-900 line-clamp-1">
+                    {need.itemTitle}
+                  </span>
+                  <span className="rounded-lg bg-amber-100 text-amber-950 text-xs font-black px-2 py-0.5 shrink-0">
+                    Max ₹{need.maxBudget}
+                  </span>
+                </div>
+
+                <div className="mt-1 flex items-center gap-1 text-[11px] text-amber-800 font-semibold">
+                  <Users className="h-3 w-3 text-amber-600" />
+                  <span>{studentsLookingCount} students looking on campus</span>
+                </div>
+
+                <p className="mt-1.5 text-xs text-zinc-500 line-clamp-2 leading-relaxed">
+                  {need.notes || 'Looking for passing senior who no longer needs this.'}
+                </p>
               </div>
 
-              <p className="mt-1.5 text-xs text-zinc-500 line-clamp-2 leading-relaxed">
-                {need.notes || 'Looking for passing senior who no longer needs this.'}
-              </p>
+              <div className="mt-3.5 pt-3 border-t border-zinc-100 flex items-center justify-between text-[11px]">
+                <span className="text-zinc-400 font-medium">
+                  Cond: {need.preferredCondition.replace('_', ' ')}
+                </span>
+                <button
+                  onClick={() => onOpenCreateListingForNeed(need)}
+                  className="font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 text-xs bg-emerald-50 hover:bg-emerald-100/70 px-2.5 py-1 rounded-lg transition-colors"
+                >
+                  <span>I have this &bull; Sell yours</span>
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              </div>
             </div>
-
-            <div className="mt-3.5 pt-3 border-t border-zinc-100 flex items-center justify-between text-[11px]">
-              <span className="text-zinc-400 font-medium">
-                Cond: {need.preferredCondition.replace('_', ' ')}
-              </span>
-              <button
-                onClick={() => onOpenCreateListingForNeed(need)}
-                className="font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 text-xs"
-              >
-                <span>I have this</span>
-                <ArrowRight className="h-3 w-3" />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
