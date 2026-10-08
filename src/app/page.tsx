@@ -1,296 +1,218 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMarketplace } from '@/lib/store';
-import { Listing, NeedRequest, Offer } from '@/lib/types';
-import { Navbar } from '@/components/Navbar';
-import { CampusBanner } from '@/components/CampusBanner';
-import { ListingCard } from '@/components/ListingCard';
-import { IntelligentSearch } from '@/components/IntelligentSearch';
-import { CategoryGrid } from '@/components/CategoryGrid';
-import { NeedBoardSpotlight } from '@/components/NeedBoardSpotlight';
-import { SemesterPackBanner } from '@/components/SemesterPackBanner';
-import { SafeCampusExchangeSection } from '@/components/SafeCampusExchangeSection';
-import { HowItWorksSection } from '@/components/HowItWorksSection';
-import { RecentlyViewedSection } from '@/components/RecentlyViewedSection';
-
-// Modals & Enhanced Features
-import { CreateListingModal } from '@/components/CreateListingModal';
-import { NeedBoardModal } from '@/components/NeedBoardModal';
-import { SemesterPackModal } from '@/components/SemesterPackModal';
-import { SellSemesterModal } from '@/components/SellSemesterModal';
-import { OfferModal } from '@/components/OfferModal';
-import { ListingDetailsModal } from '@/components/ListingDetailsModal';
-import { ActiveOffersModal } from '@/components/ActiveOffersModal';
-import { SavedItemsModal } from '@/components/SavedItemsModal';
-import { NotificationModal } from '@/components/NotificationModal';
-import { StudentProfileModal } from '@/components/StudentProfileModal';
-import { OnboardingModal } from '@/components/OnboardingModal';
-import { ReportModal } from '@/components/ReportModal';
-import { CampusHealthDashboardModal } from '@/components/CampusHealthDashboardModal';
-import { TrustSafetyModal } from '@/components/TrustSafetyModal';
-import { MyDashboardModal } from '@/components/MyDashboardModal';
-import { InteractiveDemoTour } from '@/components/InteractiveDemoTour';
-import { Toast } from '@/components/ui/Toast';
-
 import {
   Search,
-  Filter,
-  Layers,
-  Sparkles,
   ArrowRight,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  Compass,
-  ArrowRightLeft,
-  Activity,
-  UserPlus,
-  SlidersHorizontal,
-  Flame,
-  Tag,
-  BookOpen,
-  Zap,
-  Bookmark,
-  ShieldCheck,
   PlusCircle,
+  Layers,
+  Compass,
+  Sparkles,
+  Flame,
+  MapPin,
+  TrendingUp,
+  Recycle,
+  CheckCircle2,
+  BookOpen,
+  Tag,
+  ShieldCheck,
+  ChevronRight,
+  Package,
 } from 'lucide-react';
 
+const TRENDING_CATEGORIES = [
+  { label: 'Scientific Calculators', icon: '⚡', query: 'calculator' },
+  { label: 'Engineering Drawing Kits', icon: '📐', query: 'drafter' },
+  { label: 'Course Textbooks', icon: '📚', query: 'book' },
+  { label: 'Lab Coats & Goggles', icon: '🥼', query: 'coat' },
+  { label: 'Electronics & Arduino', icon: '💻', query: 'arduino' },
+  { label: 'Semester Starter Packs', icon: '🎒', isPack: true },
+];
+
 export default function HomePage() {
+  const router = useRouter();
   const {
     currentCampus,
     currentProfile,
-    categories,
     listings,
     needRequests,
-    selectedSemester,
-    setSelectedSemester,
+    impactStats,
+    marketplaceHealth,
     searchQuery,
     setSearchQuery,
-    selectedCategory,
-    setSelectedCategory,
-    selectedMode,
-    setSelectedMode,
-    sortOption,
-    setSortOption,
+    toggleSaveListing,
     savedListingIds,
-    addToRecentlyViewed,
-    saveSearch,
-    resetData,
   } = useMarketplace();
 
-  // Modals state
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createModalPrefill, setCreateModalPrefill] = useState<{ title: string; budget?: number }>({
-    title: '',
-  });
-  const [showNeedBoardModal, setShowNeedBoardModal] = useState(false);
-  const [showSemesterPackModal, setShowSemesterPackModal] = useState(false);
-  const [showSellSemesterModal, setShowSellSemesterModal] = useState(false);
-  const [showActiveOffersModal, setShowActiveOffersModal] = useState(false);
-  const [showSavedItemsModal, setShowSavedItemsModal] = useState(false);
-  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [showHealthModal, setShowHealthModal] = useState(false);
-  const [showTrustSafetyModal, setShowTrustSafetyModal] = useState(false);
-  const [showMyDashboardModal, setShowMyDashboardModal] = useState(false);
-  const [showDemoTour, setShowDemoTour] = useState(false);
-  const [reportListingTarget, setReportListingTarget] = useState<Listing | null>(null);
+  // Curated best deals (items with > 35% savings)
+  const bestDeals = listings
+    .filter((l) => l.campusId === currentCampus.id && l.status === 'ACTIVE' && l.originalNewPrice && l.originalNewPrice > l.price)
+    .slice(0, 4);
 
-  // Selected item modal state
-  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
-  const [offerListing, setOfferListing] = useState<Listing | null>(null);
-  const [activeOfferForModal, setActiveOfferForModal] = useState<Offer | null>(null);
+  // Top 3 urgent needs on campus
+  const urgentNeeds = needRequests
+    .filter((n) => n.campusId === currentCampus.id && n.status === 'OPEN')
+    .slice(0, 3);
 
-  // Quick toast state
-  const [toastData, setToastData] = useState<{ message: string; title?: string } | null>(null);
-
-  const showToast = (message: string, title?: string) => {
-    setToastData({ message, title });
-    setTimeout(() => setToastData(null), 5000);
-  };
-
-  // Inspect listing helper (logs to recently viewed)
-  const handleInspectListing = (item: Listing) => {
-    addToRecentlyViewed(item.id);
-    setSelectedListing(item);
-  };
-
-  // 1. Filter listings
-  const filteredListings = listings.filter((l) => {
-    // Campus match
-    if (l.campusId !== currentCampus.id) return false;
-
-    // Semester match
-    if (
-      selectedSemester !== 'ALL' &&
-      l.relevantSemesters &&
-      !l.relevantSemesters.includes(selectedSemester)
-    ) {
-      return false;
-    }
-
-    // Category match
-    if (selectedCategory !== 'ALL' && l.categoryId !== selectedCategory) {
-      return false;
-    }
-
-    // Transaction Mode match
-    if (selectedMode !== 'ALL' && l.mode !== selectedMode) {
-      return false;
-    }
-
-    // Search query match
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = l.title.toLowerCase().includes(q);
-      const matchDesc = l.description?.toLowerCase().includes(q);
-      const matchCourse = l.targetCourse?.toLowerCase().includes(q);
-      if (!matchTitle && !matchDesc && !matchCourse) return false;
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push('/browse');
     }
-
-    return true;
-  });
-
-  // 2. Sort listings
-  const sortedListings = [...filteredListings].sort((a, b) => {
-    switch (sortOption) {
-      case 'NEWEST':
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      case 'PRICE_LOW':
-        return a.price - b.price;
-      case 'PRICE_HIGH':
-        return b.price - a.price;
-      case 'BEST_SAVINGS': {
-        const savA = a.originalNewPrice ? (a.originalNewPrice - a.price) / a.originalNewPrice : 0;
-        const savB = b.originalNewPrice ? (b.originalNewPrice - b.price) / b.originalNewPrice : 0;
-        return savB - savA;
-      }
-      case 'RECOMMENDED':
-      default:
-        return 0;
-    }
-  });
-
-  // 3. Editorial subsets
-  const bestDeals = listings.filter((l) => {
-    if (l.campusId !== currentCampus.id) return false;
-    if (!l.originalNewPrice) return false;
-    const sav = (l.originalNewPrice - l.price) / l.originalNewPrice;
-    return sav >= 0.4 && l.status === 'ACTIVE';
-  });
+  };
 
   return (
-    <div className="min-h-screen bg-zinc-50/60 text-zinc-950 flex flex-col font-sans antialiased pb-20 sm:pb-0">
-      {/* Top Evaluator & Demo Simulation Bar */}
-      <aside aria-label="Demo Bar" className="bg-zinc-950 text-white text-xs px-4 py-2 border-b border-zinc-800">
-        <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 text-[10px] border border-emerald-500/30">
-              Campus Live
-            </span>
-            <span className="text-zinc-300">
-              Logged into <strong>{currentCampus.name}</strong> as <strong>{currentProfile.fullName}</strong>.
+    <div className="flex-1 w-full flex flex-col bg-zinc-50/50">
+      {/* 1. HERO & INTENT SECTION (Section 5: Help the user decide what to do) */}
+      <section className="relative overflow-hidden bg-white border-b border-zinc-200/80 pt-8 pb-10">
+        <div className="absolute top-0 right-1/4 -z-10 h-72 w-72 rounded-full bg-emerald-100/40 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 -z-10 h-64 w-64 rounded-full bg-amber-100/30 blur-3xl pointer-events-none" />
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-7">
+          {/* Greeting & Campus Badge */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-900 border border-emerald-200/90">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Campus Verified &bull; {currentCampus.name}</span>
+            </div>
+
+            <span className="text-xs text-zinc-500 font-medium hidden sm:inline">
+              Welcome, <strong className="text-zinc-900">{currentProfile.fullName.split(' ')[0]}</strong> ({currentProfile.degreeProgram})
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowDemoTour(true)}
-              className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 text-[11px] bg-emerald-950/70 px-2 py-0.5 rounded-lg border border-emerald-800"
-            >
-              <Zap className="h-3 w-3" />
-              <span>2-Min Demo Tour</span>
-            </button>
+          {/* Main Headline */}
+          <div className="space-y-3 max-w-3xl">
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-zinc-950 leading-[1.12]">
+              What do you need <br className="hidden sm:inline" />
+              <span className="text-emerald-700">this semester?</span>
+            </h1>
+            <p className="text-sm sm:text-base text-zinc-600 font-normal leading-relaxed">
+              Buy from students who finished their courses. Sell what you no longer need. Or broadcast what you&apos;re looking for and let seniors connect directly with you on campus.
+            </p>
+          </div>
 
-            <button
-              onClick={() => setShowTrustSafetyModal(true)}
-              className="text-zinc-400 hover:text-white text-[11px] underline hidden sm:inline"
-            >
-              Safety Rules
-            </button>
+          {/* Search Trigger Bar */}
+          <form onSubmit={handleSearchSubmit} className="max-w-2xl">
+            <div className="relative flex items-center rounded-2xl border border-zinc-200 bg-zinc-50/80 shadow-xs focus-within:border-emerald-600 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-600/20 transition-all">
+              <div className="pl-4 pr-2 text-zinc-400">
+                <Search className="h-5 w-5 text-emerald-600" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="What are you looking for? (e.g. Casio FX-991, Drawing Kit, Kreyszig Math, Lab coat...)"
+                className="w-full bg-transparent py-3.5 text-xs sm:text-sm font-medium text-zinc-900 placeholder-zinc-400 focus:outline-hidden"
+              />
+              <button
+                type="submit"
+                className="mr-2 px-4 py-2 rounded-xl bg-zinc-950 text-white font-bold text-xs hover:bg-zinc-800 transition-colors shadow-2xs shrink-0"
+              >
+                Search
+              </button>
+            </div>
+          </form>
 
-            <button
-              onClick={() => setShowProfileModal(true)}
-              className="text-zinc-400 hover:text-white text-[11px] underline"
+          {/* The 3 Dominant Action Cards (Section 3 & 5: Buy, Sell, Post a Need) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+            {/* 1. Buy Something */}
+            <Link
+              href="/browse"
+              className="group flex flex-col justify-between p-5 rounded-2xl bg-zinc-950 text-white hover:bg-zinc-900 transition-all shadow-md shadow-zinc-950/10 active:scale-98"
             >
-              Switch Persona
-            </button>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black tracking-wide uppercase text-emerald-400">1. Buy</span>
+                  <Compass className="h-4 w-4 text-zinc-400 group-hover:text-emerald-400 transition-colors" />
+                </div>
+                <h3 className="text-base font-black text-white">Browse Marketplace</h3>
+                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                  Find scientific calculators, textbooks &amp; kits from students on your campus at 60%+ savings.
+                </p>
+              </div>
+              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-emerald-400 group-hover:underline">
+                <span>Explore Catalog</span>
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
 
-            <button
-              onClick={resetData}
-              className="text-zinc-400 hover:text-white flex items-center gap-1 text-[11px] underline"
+            {/* 2. Sell Something */}
+            <Link
+              href="/sell"
+              className="group flex flex-col justify-between p-5 rounded-2xl bg-white border border-zinc-200/90 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all shadow-2xs active:scale-98"
             >
-              <RefreshCw className="h-3 w-3" /> Reset Data
-            </button>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black tracking-wide uppercase text-emerald-700">2. Sell</span>
+                  <PlusCircle className="h-4 w-4 text-emerald-600" />
+                </div>
+                <h3 className="text-base font-black text-zinc-900">Sell an Item (&lt; 60s)</h3>
+                <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                  Turn unused semester gear into money. 1-click popular presets &amp; fair price guidance.
+                </p>
+              </div>
+              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-emerald-700 group-hover:underline">
+                <span>Start Listing Flow</span>
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            {/* 3. Post a Need */}
+            <Link
+              href="/needs/create"
+              className="group flex flex-col justify-between p-5 rounded-2xl bg-amber-50/80 border border-amber-200/90 hover:border-amber-300 hover:bg-amber-100/60 transition-all shadow-2xs active:scale-98"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black tracking-wide uppercase text-amber-800">3. Need</span>
+                  <Layers className="h-4 w-4 text-amber-600" />
+                </div>
+                <h3 className="text-base font-black text-amber-950">Post What You Need</h3>
+                <p className="text-xs text-amber-800/80 mt-1 leading-relaxed">
+                  Can&apos;t find it? Post your budget on the Need Board. Graduating seniors get notified to sell theirs.
+                </p>
+              </div>
+              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-amber-900 group-hover:underline">
+                <span>Broadcast Demand</span>
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          </div>
+
+          {/* Trending Category Chips Strip */}
+          <div className="pt-2 border-t border-zinc-100 flex flex-col sm:flex-row sm:items-center gap-2.5">
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Trending on Campus:</span>
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {TRENDING_CATEGORIES.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => {
+                    if (item.isPack) router.push('/semester');
+                    else router.push(`/search?q=${encodeURIComponent(item.query || '')}`);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-xs font-medium text-zinc-700 hover:text-emerald-900 transition-all shadow-2xs"
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </aside>
+      </section>
 
-      {/* Global Navigation Header & Mobile Bottom Bar */}
-      <Navbar
-        onOpenCreateListing={() => {
-          setCreateModalPrefill({ title: '' });
-          setShowCreateModal(true);
-        }}
-        onOpenNeedBoard={() => setShowNeedBoardModal(true)}
-        onOpenSemesterPack={() => setShowSemesterPackModal(true)}
-        onOpenSellSemester={() => setShowSellSemesterModal(true)}
-        onOpenOffers={() => setShowActiveOffersModal(true)}
-        onOpenSavedItems={() => setShowSavedItemsModal(true)}
-        onOpenNotifications={() => setShowNotificationsModal(true)}
-        onOpenProfileModal={() => setShowProfileModal(true)}
-        onOpenOnboarding={() => setShowOnboardingModal(true)}
-        onOpenHealthDashboard={() => setShowHealthModal(true)}
-        onOpenTrustSafety={() => setShowTrustSafetyModal(true)}
-        onOpenDemoTour={() => setShowDemoTour(true)}
-        onOpenMyDashboard={() => setShowMyDashboardModal(true)}
-      />
-
-      {/* Toast Alert */}
-      {toastData && (
-        <Toast
-          message={toastData.message}
-          title={toastData.title}
-          onClose={() => setToastData(null)}
-        />
-      )}
-
-      {/* 1. Hero & Campus Circular Economy Banner */}
-      <CampusBanner
-        onOpenSemesterPack={() => setShowSemesterPackModal(true)}
-        onOpenCreateListing={() => {
-          setCreateModalPrefill({ title: '' });
-          setShowCreateModal(true);
-        }}
-        onOpenNeedBoard={() => setShowNeedBoardModal(true)}
-        onBrowseClick={() => {
-          const el = document.getElementById('marketplace-catalog');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }}
-      />
-
-      {/* Main Content Feed */}
-      <main className="mx-auto max-w-7xl flex-1 px-4 sm:px-6 lg:px-8 py-8 w-full space-y-12">
-        {/* 2. Intelligent Campus Search Bar */}
-        <IntelligentSearch />
-
-        {/* 3. Category Discovery Grid */}
-        <div id="categories-section">
-          <CategoryGrid />
-        </div>
-
-        {/* 4. Need Board Spotlight (Reverse Demand Engine) */}
-        <NeedBoardSpotlight
-          onOpenNeedBoard={() => setShowNeedBoardModal(true)}
-          onOpenCreateListingForNeed={(need) => {
-            setCreateModalPrefill({ title: need.itemTitle, budget: need.maxBudget });
-            setShowCreateModal(true);
-          }}
-        />
-
-        {/* 5. Best Deals Spotlight (High % Discounted Items) */}
+      {/* 2. CURATED CONTENT (Section 5: Curated sections leading into other screens) */}
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-12 w-full">
+        {/* Curated Section 1: Fresh Campus Deals */}
         {bestDeals.length > 0 && (
           <section className="space-y-4">
             <div className="flex items-center justify-between">
@@ -299,220 +221,168 @@ export default function HomePage() {
                   <Flame className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-black text-zinc-950 tracking-tight">
-                    Best Campus Deals
-                  </h2>
-                  <p className="text-xs text-zinc-500 font-normal">
-                    Verified items with over 40% savings vs. retail
-                  </p>
+                  <h2 className="text-xl font-black text-zinc-950 tracking-tight">Best Deals on {currentCampus.shortCode}</h2>
+                  <p className="text-xs text-zinc-500">Over 40% discount vs. buying retail new</p>
                 </div>
               </div>
+
+              <Link
+                href="/browse"
+                className="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-1"
+              >
+                <span>View All ({marketplaceHealth.activeListings})</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {bestDeals.slice(0, 4).map((listing) => (
-                <ListingCard
-                  key={`deal-${listing.id}`}
-                  listing={listing}
-                  onSelect={handleInspectListing}
-                  onMakeOffer={(item) => {
-                    setOfferListing(item);
-                    setActiveOfferForModal(null);
-                  }}
-                />
+              {bestDeals.map((listing) => (
+                <Link
+                  key={listing.id}
+                  href={`/listing/${listing.id}`}
+                  className="group rounded-2xl border border-zinc-200 bg-white overflow-hidden hover:border-zinc-300 hover:shadow-md transition-all card-hover flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative aspect-4/3 w-full bg-zinc-100 overflow-hidden">
+                      <img
+                        src={listing.images[0]}
+                        alt={listing.title}
+                        className="h-full w-full object-cover group-hover:scale-103 transition-transform"
+                      />
+                      <span className="absolute top-2.5 left-2.5 rounded-lg bg-zinc-950/80 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white uppercase">
+                        {listing.mode}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 space-y-1">
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">
+                        {listing.condition.replace('_', ' ')}
+                      </span>
+                      <h4 className="font-bold text-xs sm:text-sm text-zinc-900 truncate mt-1 group-hover:text-emerald-700 transition-colors">
+                        {listing.title}
+                      </h4>
+                      <div className="flex items-baseline gap-2 pt-0.5">
+                        <span className="text-base font-black text-zinc-950">₹{listing.price}</span>
+                        {listing.originalNewPrice && (
+                          <span className="text-xs text-zinc-400 line-through">₹{listing.originalNewPrice}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 pt-2 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-500">
+                    <span className="truncate">{listing.targetCourse}</span>
+                    <span className="font-bold text-emerald-700 group-hover:underline">Inspect →</span>
+                  </div>
+                </Link>
               ))}
             </div>
           </section>
         )}
 
-        {/* 6. Main Marketplace Catalog */}
-        <section id="marketplace-catalog" className="space-y-6 pt-4">
-          {/* Section Header & Sort Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200/90">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-black text-zinc-950 tracking-tight">
-                Fresh on Campus
-              </h2>
-              <p className="text-xs sm:text-sm text-zinc-500 font-normal">
-                {sortedListings.length} reusable essentials available on {currentCampus.name}
-              </p>
+        {/* Curated Section 2: Students Looking For (Teaser to /needs) */}
+        {urgentNeeds.length > 0 && (
+          <section className="rounded-3xl border border-amber-200/90 bg-linear-to-r from-amber-50/70 via-orange-50/40 to-yellow-50/40 p-6 sm:p-7 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-amber-500 text-white shadow-2xs">
+                  <Layers className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-amber-950 tracking-tight">Students Are Looking For (Need Board)</h2>
+                  <p className="text-xs text-amber-800/80">Reverse Demand: Finished your semester? Pass items directly to juniors</p>
+                </div>
+              </div>
+
+              <Link
+                href="/needs"
+                className="text-xs font-bold text-amber-900 hover:underline flex items-center gap-1 self-start sm:self-auto"
+              >
+                <span>View All Requests ({marketplaceHealth.activeRequests})</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
 
-            {/* Sort & Filter Controls */}
-            <div className="flex items-center gap-2.5">
-              {/* Semester Filter Indicator Pill */}
-              {selectedSemester !== 'ALL' && (
-                <span className="rounded-xl bg-zinc-950 text-white text-xs font-bold px-3 py-1.5 flex items-center gap-1.5">
-                  <BookOpen className="h-3 w-3 text-emerald-400" />
-                  <span>Sem {selectedSemester}</span>
-                  <button
-                    onClick={() => setSelectedSemester('ALL')}
-                    className="ml-1 text-zinc-400 hover:text-white"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-
-              {/* Category Filter Indicator Pill */}
-              {selectedCategory !== 'ALL' && (
-                <span className="rounded-xl bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 flex items-center gap-1.5">
-                  <Tag className="h-3 w-3" />
-                  <span>Filtered</span>
-                  <button
-                    onClick={() => setSelectedCategory('ALL')}
-                    className="ml-1 text-emerald-200 hover:text-white"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-
-              {/* Sort Selector Dropdown */}
-              <div className="flex items-center gap-2 text-xs">
-                <span className="font-bold text-zinc-400 hidden sm:inline">Sort:</span>
-                <select
-                  value={sortOption}
-                  onChange={(e) =>
-                    setSortOption(
-                      e.target.value as
-                        | 'RECOMMENDED'
-                        | 'NEWEST'
-                        | 'PRICE_LOW'
-                        | 'PRICE_HIGH'
-                        | 'BEST_SAVINGS'
-                    )
-                  }
-                  className="rounded-xl border border-zinc-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 shadow-2xs focus:border-emerald-600 focus:outline-hidden"
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              {urgentNeeds.map((need) => (
+                <div
+                  key={need.id}
+                  className="flex flex-col justify-between p-4 rounded-2xl border border-amber-200/90 bg-white shadow-2xs hover:border-amber-300 transition-all card-hover"
                 >
-                  <option value="RECOMMENDED">Recommended</option>
-                  <option value="NEWEST">Newest Listings</option>
-                  <option value="PRICE_LOW">Price: Low → High</option>
-                  <option value="PRICE_HIGH">Price: High → Low</option>
-                  <option value="BEST_SAVINGS">Highest Savings %</option>
-                </select>
-              </div>
-            </div>
-          </div>
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-extrabold text-sm text-zinc-900 line-clamp-1">{need.itemTitle}</span>
+                      <span className="rounded-lg bg-amber-100 text-amber-950 text-xs font-black px-2 py-0.5 shrink-0">
+                        Max ₹{need.maxBudget}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-zinc-500 line-clamp-2 leading-relaxed">
+                      {need.notes || 'Looking for passing senior who no longer needs this.'}
+                    </p>
+                  </div>
 
-          {/* Section 7 of Spec: Results Grid / Graceful NO-RESULT EXPERIENCE */}
-          {sortedListings.length === 0 ? (
-            <div className="rounded-3xl border border-amber-200/80 bg-linear-to-b from-amber-50/40 via-white to-amber-50/20 p-10 sm:p-14 text-center space-y-4">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 shadow-xs">
-                <Compass className="h-7 w-7" />
-              </div>
-              <div className="font-black text-zinc-950 text-xl tracking-tight">
-                We couldn&apos;t find that yet.
-              </div>
-              <p className="text-xs sm:text-sm text-zinc-600 max-w-lg mx-auto leading-relaxed">
-                Campus inventory moves fast as courses begin and end. Tell passing seniors what you&apos;re looking for, and CampuShare will connect you directly when someone lists it.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-3">
-                <button
-                  onClick={() => setShowNeedBoardModal(true)}
-                  className="rounded-xl bg-amber-600 px-5 py-3 text-xs font-bold text-white hover:bg-amber-500 shadow-md shadow-amber-600/20 active:scale-95 transition-all"
-                >
-                  Post on Need Board (1-Click)
-                </button>
-                {searchQuery && (
-                  <button
-                    onClick={() => {
-                      saveSearch(searchQuery);
-                      showToast(`We will alert you when "${searchQuery}" is listed on campus.`, 'Search Saved');
-                    }}
-                    className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-bold text-zinc-800 hover:bg-zinc-50 shadow-2xs"
-                  >
-                    Save This Search &amp; Notify Me
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSelectedCategory('ALL');
-                    setSelectedMode('ALL');
-                    setSelectedSemester('ALL');
-                  }}
-                  className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-bold text-zinc-700 hover:bg-zinc-50"
-                >
-                  Reset All Filters
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {sortedListings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                  onSelect={handleInspectListing}
-                  onMakeOffer={(item) => {
-                    setOfferListing(item);
-                    setActiveOfferForModal(null);
-                  }}
-                />
+                  <div className="mt-3.5 pt-3 border-t border-zinc-100 flex items-center justify-between text-[11px]">
+                    <span className="text-zinc-400 font-medium">Cond: {need.preferredCondition.replace('_', ' ')}</span>
+                    <Link
+                      href={`/sell/create?title=${encodeURIComponent(need.itemTitle)}&price=${need.maxBudget}`}
+                      className="font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 text-xs bg-emerald-50 hover:bg-emerald-100/70 px-2.5 py-1 rounded-lg transition-colors"
+                    >
+                      <span>I have this &bull; Sell</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
               ))}
             </div>
-          )}
+          </section>
+        )}
+
+        {/* Curated Section 3: Semester Procurement Banner (Teaser to /semester) */}
+        <section className="relative overflow-hidden rounded-3xl border border-indigo-200/80 bg-linear-to-r from-indigo-900 via-zinc-900 to-zinc-950 p-6 sm:p-8 text-white shadow-md">
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-2.5 max-w-xl">
+              <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/20 text-indigo-300 px-3 py-1 text-xs font-bold border border-indigo-500/30">
+                <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+                <span>Curated Semester Kits</span>
+              </div>
+              <h3 className="text-2xl font-black text-white leading-tight">
+                Get your complete semester starter pack for 62% less
+              </h3>
+              <p className="text-xs sm:text-sm text-zinc-300">
+                Incoming engineering students bundle scientific calculators, mini drafters, lab coats, and textbooks directly from passing seniors.
+              </p>
+            </div>
+
+            <Link
+              href="/semester"
+              className="flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold px-5 py-3 text-xs sm:text-sm transition-all shadow-md shadow-emerald-500/20 active:scale-95 shrink-0"
+            >
+              <Package className="h-4 w-4" />
+              <span>Explore Semester Packs</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </section>
 
-        {/* 7. Recently Viewed & Recommendations (Sections 23 & 24) */}
-        <RecentlyViewedSection
-          onSelectListing={handleInspectListing}
-          onMakeOffer={(item) => {
-            setOfferListing(item);
-            setActiveOfferForModal(null);
-          }}
-        />
-
-        {/* 8. Semester Starter Pack Bundle Experience */}
-        <SemesterPackBanner
-          onOpenSemesterPack={() => setShowSemesterPackModal(true)}
-          onOpenSellSemester={() => setShowSellSemesterModal(true)}
-        />
-
-        {/* 9. Safe Campus Exchange Section */}
-        <SafeCampusExchangeSection />
-
-        {/* 10. How Campus Reuse Works */}
-        <HowItWorksSection
-          onOpenCreateListing={() => {
-            setCreateModalPrefill({ title: '' });
-            setShowCreateModal(true);
-          }}
-        />
-
-        {/* 11. Final Call to Action */}
-        <section className="rounded-3xl border border-zinc-200 bg-zinc-950 text-white p-8 sm:p-12 text-center space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 text-emerald-400 px-3 py-1 text-xs font-bold border border-emerald-500/30">
-            <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Join Your Campus Circular Community</span>
+        {/* Curated Section 4: Campus Safety & CCTV Guarantee (Teaser to /safety) */}
+        <section className="rounded-3xl border border-zinc-200 bg-white p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200/70">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Safe Meetup Guarantee</span>
+            </div>
+            <h3 className="text-lg font-black text-zinc-950">Campus-Only Exchanges at Designated CCTV Spots</h3>
+            <p className="text-xs text-zinc-600 max-w-xl">
+              No shipping delays, no strangers, no upfront wire transfers. Inspect the item in person at the Central Library Ground Foyer or SAC before scanning peer UPI.
+            </p>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white max-w-xl mx-auto">
-            Got academic gear sitting in a drawer? Give it another semester.
-          </h2>
-
-          <p className="text-xs sm:text-sm text-zinc-400 max-w-md mx-auto">
-            List in under 60 seconds. Keep textbook costs down and academic supplies inside your college.
-          </p>
-
-          <div className="pt-2 flex flex-wrap justify-center gap-3">
-            <button
-              onClick={() => {
-                setCreateModalPrefill({ title: '' });
-                setShowCreateModal(true);
-              }}
-              className="px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs sm:text-sm font-bold shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
-            >
-              List an Item on Campus (&lt; 60s)
-            </button>
-            <button
-              onClick={() => setShowNeedBoardModal(true)}
-              className="px-5 py-3 rounded-2xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs sm:text-sm font-bold transition-all"
-            >
-              Browse What Students Need
-            </button>
-          </div>
+          <Link
+            href="/safety"
+            className="px-4 py-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-800 transition-colors shrink-0"
+          >
+            Read Safety Rules →
+          </Link>
         </section>
       </main>
 
@@ -524,200 +394,18 @@ export default function HomePage() {
               CS
             </div>
             <span className="font-extrabold text-zinc-900 text-sm">CampuShare</span>
-            <span>&bull; Campus-First Student Reuse Marketplace</span>
+            <span>&bull; Student Reuse Marketplace for {currentCampus.name}</span>
           </div>
 
           <div className="flex items-center gap-4 text-xs">
-            <button
-              onClick={() => setShowTrustSafetyModal(true)}
-              className="hover:text-zinc-900 underline"
-            >
-              Trust &amp; Safety Guidelines
-            </button>
-            <button
-              onClick={() => setShowDemoTour(true)}
-              className="hover:text-zinc-900 underline"
-            >
-              Demo Walkthrough
-            </button>
-            <button
-              onClick={() => setShowHealthModal(true)}
-              className="hover:text-zinc-900 underline"
-            >
-              Campus Health Telemetry
-            </button>
-          </div>
-
-          <div className="text-center sm:text-right text-[11px] text-zinc-400">
-            Core thesis: <em>Buy less. Reuse more. Spend less.</em> &bull; Running on {currentCampus.name}
+            <Link href="/browse" className="hover:text-zinc-900">Browse</Link>
+            <Link href="/needs" className="hover:text-zinc-900">Needs</Link>
+            <Link href="/sell" className="hover:text-zinc-900">Sell</Link>
+            <Link href="/semester" className="hover:text-zinc-900">Semester Kits</Link>
+            <Link href="/safety" className="hover:text-zinc-900">Safety Guide</Link>
           </div>
         </div>
       </footer>
-
-      {/* ALL MODALS & INTERACTIVE OVERLAYS */}
-      <CreateListingModal
-        isOpen={showCreateModal}
-        prefilledTitle={createModalPrefill.title}
-        prefilledBudget={createModalPrefill.budget}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={(matchedCount) => {
-          if (matchedCount > 0) {
-            showToast(
-              `Matching Need Request Found! ${matchedCount} student(s) were waiting for this item on the Need Board.`,
-              'Smart Match Alert'
-            );
-          } else {
-            showToast('Item successfully published to your campus reuse marketplace!', 'Listing Published');
-          }
-        }}
-      />
-
-      <NeedBoardModal
-        isOpen={showNeedBoardModal}
-        onClose={() => setShowNeedBoardModal(false)}
-        onViewListing={(listingId) => {
-          const l = listings.find((item) => item.id === listingId);
-          if (l) handleInspectListing(l);
-          setShowNeedBoardModal(false);
-        }}
-        onCreateMatchingListing={(need) => {
-          setShowNeedBoardModal(false);
-          setCreateModalPrefill({ title: need.itemTitle, budget: need.maxBudget });
-          setShowCreateModal(true);
-        }}
-      />
-
-      <SemesterPackModal
-        isOpen={showSemesterPackModal}
-        onClose={() => setShowSemesterPackModal(false)}
-        onFilterSemesterListings={(sem) => {
-          setSelectedSemester(sem);
-          const el = document.getElementById('marketplace-catalog');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }}
-      />
-
-      <SellSemesterModal
-        isOpen={showSellSemesterModal}
-        onClose={() => setShowSellSemesterModal(false)}
-        onSuccess={() => {
-          showToast('Semester Pack Bundle successfully published for incoming juniors!', 'Bundle Published');
-        }}
-      />
-
-      <ListingDetailsModal
-        isOpen={Boolean(selectedListing)}
-        onClose={() => setSelectedListing(null)}
-        listing={selectedListing}
-        onMakeOffer={(item) => {
-          setSelectedListing(null);
-          setOfferListing(item);
-          setActiveOfferForModal(null);
-        }}
-        onReport={(item) => {
-          setReportListingTarget(item);
-        }}
-      />
-
-      <OfferModal
-        isOpen={Boolean(offerListing)}
-        onClose={() => setOfferListing(null)}
-        listing={offerListing}
-        activeOffer={activeOfferForModal}
-      />
-
-      <ActiveOffersModal
-        isOpen={showActiveOffersModal}
-        onClose={() => setShowActiveOffersModal(false)}
-        onSelectOffer={(offer, listing) => {
-          setOfferListing(listing);
-          setActiveOfferForModal(offer);
-        }}
-      />
-
-      <SavedItemsModal
-        isOpen={showSavedItemsModal}
-        onClose={() => setShowSavedItemsModal(false)}
-        onSelectListing={(listing) => {
-          handleInspectListing(listing);
-        }}
-      />
-
-      <NotificationModal
-        isOpen={showNotificationsModal}
-        onClose={() => setShowNotificationsModal(false)}
-        onOpenNeedBoard={() => setShowNeedBoardModal(true)}
-        onOpenOffers={() => setShowActiveOffersModal(true)}
-      />
-
-      <StudentProfileModal
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        onOpenOnboarding={() => setShowOnboardingModal(true)}
-      />
-
-      <OnboardingModal
-        isOpen={showOnboardingModal}
-        onClose={() => setShowOnboardingModal(false)}
-        onSuccess={(name) => {
-          showToast(`Welcome ${name}! Your verified campus profile is now active.`, 'Account Activated');
-        }}
-      />
-
-      <ReportModal
-        isOpen={Boolean(reportListingTarget)}
-        onClose={() => setReportListingTarget(null)}
-        listing={reportListingTarget}
-        onSuccess={() => {
-          showToast('Report submitted confidentially to campus moderation team.', 'Report Received');
-        }}
-      />
-
-      <CampusHealthDashboardModal
-        isOpen={showHealthModal}
-        onClose={() => setShowHealthModal(false)}
-      />
-
-      <TrustSafetyModal
-        isOpen={showTrustSafetyModal}
-        onClose={() => setShowTrustSafetyModal(false)}
-        onOpenReport={() => {
-          setReportListingTarget(listings[0] || null);
-        }}
-      />
-
-      <MyDashboardModal
-        isOpen={showMyDashboardModal}
-        onClose={() => setShowMyDashboardModal(false)}
-        onSelectListing={handleInspectListing}
-        onOpenOffer={(offer, listing) => {
-          setOfferListing(listing);
-          setActiveOfferForModal(offer);
-        }}
-        onOpenCreateListing={() => {
-          setCreateModalPrefill({ title: '' });
-          setShowCreateModal(true);
-        }}
-        onOpenNeedBoard={() => setShowNeedBoardModal(true)}
-        onOpenSavedItems={() => setShowSavedItemsModal(true)}
-      />
-
-      {/* Evaluator 2-Minute Demo Tour (Sections 37 & 38) */}
-      <InteractiveDemoTour
-        isOpen={showDemoTour}
-        onClose={() => setShowDemoTour(false)}
-        onInspectListing={handleInspectListing}
-        onOpenOffer={(item) => {
-          setOfferListing(item);
-          setActiveOfferForModal(null);
-        }}
-        onOpenNeedBoard={() => setShowNeedBoardModal(true)}
-        onOpenCreateListing={(prefillTitle, prefillBudget) => {
-          setCreateModalPrefill({ title: prefillTitle, budget: prefillBudget });
-          setShowCreateModal(true);
-        }}
-        onOpenHealthDashboard={() => setShowHealthModal(true)}
-      />
     </div>
   );
 }
