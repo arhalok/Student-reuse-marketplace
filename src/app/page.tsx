@@ -13,6 +13,9 @@ import { SellSemesterModal } from '@/components/SellSemesterModal';
 import { OfferModal } from '@/components/OfferModal';
 import { ListingDetailsModal } from '@/components/ListingDetailsModal';
 import { ActiveOffersModal } from '@/components/ActiveOffersModal';
+import { OnboardingModal } from '@/components/OnboardingModal';
+import { ReportModal } from '@/components/ReportModal';
+import { CampusHealthDashboardModal } from '@/components/CampusHealthDashboardModal';
 import {
   Search,
   Filter,
@@ -26,6 +29,8 @@ import {
   RefreshCw,
   Compass,
   ArrowRightLeft,
+  Activity,
+  UserPlus,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -52,6 +57,9 @@ export default function HomePage() {
   const [showSemesterPackModal, setShowSemesterPackModal] = useState(false);
   const [showSellSemesterModal, setShowSellSemesterModal] = useState(false);
   const [showActiveOffersModal, setShowActiveOffersModal] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [showHealthModal, setShowHealthModal] = useState(false);
+  const [reportListingTarget, setReportListingTarget] = useState<Listing | null>(null);
 
   // Selected item modal state
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
@@ -115,6 +123,8 @@ export default function HomePage() {
         onOpenSemesterPack={() => setShowSemesterPackModal(true)}
         onOpenSellSemester={() => setShowSellSemesterModal(true)}
         onOpenOffers={() => setShowActiveOffersModal(true)}
+        onOpenOnboarding={() => setShowOnboardingModal(true)}
+        onOpenHealthDashboard={() => setShowHealthModal(true)}
       />
 
       {/* Guided Walkthrough Banner */}
@@ -436,6 +446,9 @@ export default function HomePage() {
           setOfferListing(item);
           setActiveOfferForModal(null);
         }}
+        onReport={(item) => {
+          setReportListingTarget(item);
+        }}
       />
 
       <OfferModal
@@ -452,6 +465,28 @@ export default function HomePage() {
           setOfferListing(listing);
           setActiveOfferForModal(offer);
         }}
+      />
+
+      <OnboardingModal
+        isOpen={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+        onSuccess={(name) => {
+          showToast(`Welcome ${name}! Your verified campus profile is now active.`);
+        }}
+      />
+
+      <ReportModal
+        isOpen={Boolean(reportListingTarget)}
+        onClose={() => setReportListingTarget(null)}
+        listing={reportListingTarget}
+        onSuccess={() => {
+          showToast('Report submitted to campus moderation team.');
+        }}
+      />
+
+      <CampusHealthDashboardModal
+        isOpen={showHealthModal}
+        onClose={() => setShowHealthModal(false)}
       />
     </div>
   );

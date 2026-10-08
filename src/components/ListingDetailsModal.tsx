@@ -21,6 +21,7 @@ interface ListingDetailsModalProps {
   onClose: () => void;
   listing: Listing | null;
   onMakeOffer: (listing: Listing) => void;
+  onReport?: (listing: Listing) => void;
 }
 
 export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
@@ -28,6 +29,7 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
   onClose,
   listing,
   onMakeOffer,
+  onReport,
 }) => {
   const { exchangeSpots, currentProfile } = useMarketplace();
 
@@ -47,6 +49,11 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
             <span className="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5">
               Verified Student Resale
             </span>
+            {listing.distanceKm && (
+              <span className="text-[11px] font-medium text-zinc-500">
+                • {listing.distanceKm} km away on campus
+              </span>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -151,6 +158,22 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
             </div>
           )}
 
+          {/* Calculator Inspection Checklist (Section 6) */}
+          {listing.calculatorInspection && (
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+              <span className="text-xs font-bold text-zinc-900 flex items-center gap-1.5 mb-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                Scientific Calculator Verification Checklist (Section 6)
+              </span>
+              <div className="grid grid-cols-2 gap-2 text-xs text-zinc-600">
+                <div>Model: <strong>{listing.calculatorInspection.model}</strong></div>
+                <div>Power &amp; Keypad: <strong>✓ Fully Working</strong></div>
+                <div>Display Condition: <strong>{listing.calculatorInspection.displayCondition.replace('_', ' ').toLowerCase()}</strong></div>
+                <div>Battery Health: <strong>{listing.calculatorInspection.batteryCondition.toLowerCase()}</strong></div>
+              </div>
+            </div>
+          )}
+
           {/* Book Inspection Checklist */}
           {listing.bookInspection && (
             <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
@@ -217,6 +240,22 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
                 <span className="font-bold text-zinc-900">Exchange at: {spot.name}</span>
                 <p className="text-[11px] text-zinc-500">{spot.description}</p>
               </div>
+            </div>
+          )}
+
+          {/* Safety & Moderation reporting button (Section 20) */}
+          {!isOwner && (
+            <div className="pt-2 border-t border-zinc-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onReport) onReport(listing);
+                }}
+                className="text-xs text-red-600 hover:text-red-800 font-medium underline flex items-center gap-1"
+              >
+                <span>Report this listing / seller</span>
+              </button>
             </div>
           )}
         </div>

@@ -13,6 +13,8 @@ import {
   Layers,
   ArrowRightLeft,
   CheckCircle2,
+  Activity,
+  UserPlus,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -21,6 +23,8 @@ interface NavbarProps {
   onOpenSemesterPack: () => void;
   onOpenSellSemester: () => void;
   onOpenOffers: () => void;
+  onOpenOnboarding?: () => void;
+  onOpenHealthDashboard?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -29,6 +33,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSemesterPack,
   onOpenSellSemester,
   onOpenOffers,
+  onOpenOnboarding,
+  onOpenHealthDashboard,
 }) => {
   const {
     currentCampus,
@@ -154,6 +160,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </button>
 
+          {/* Campus Health Telemetry (Section 31) */}
+          {onOpenHealthDashboard && (
+            <button
+              onClick={onOpenHealthDashboard}
+              title="Campus Marketplace Health & Metrics"
+              className="hidden lg:flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-2 text-xs font-semibold text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 shadow-xs"
+            >
+              <Activity className="h-4 w-4 text-emerald-600" />
+            </button>
+          )}
+
           {/* Create Listing (Smart & Quick < 1 Min) */}
           <button
             onClick={onOpenCreateListing}
@@ -189,8 +206,20 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {showProfileDropdown && (
               <div className="absolute right-0 mt-2 w-80 rounded-xl border border-zinc-200 bg-white p-2.5 shadow-xl z-50">
-                <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                  Switch Demo Persona (Test Buyer & Seller)
+                <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
+                  <span>Switch Demo Persona</span>
+                  {onOpenOnboarding && (
+                    <button
+                      onClick={() => {
+                        setShowProfileDropdown(false);
+                        onOpenOnboarding();
+                      }}
+                      className="text-emerald-700 font-bold hover:underline flex items-center gap-1 text-[11px]"
+                    >
+                      <UserPlus className="h-3 w-3" />
+                      <span>+ New Student</span>
+                    </button>
+                  )}
                 </div>
                 {availableProfiles.map((p) => (
                   <button

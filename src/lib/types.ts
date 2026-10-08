@@ -98,6 +98,13 @@ export interface Listing {
     edition?: string;
     isbn?: string;
   };
+  calculatorInspection?: {
+    model: string;
+    isWorking: boolean;
+    displayCondition: 'CLEAN' | 'MINOR_SCRATCHES' | 'DEAD_PIXELS';
+    batteryCondition: 'FRESH' | 'WORKING' | 'NEEDS_REPLACEMENT';
+  };
+  distanceKm?: number;
   
   // Semester Graph
   targetCourse: string;
@@ -111,6 +118,17 @@ export interface Listing {
   preferredSpot?: ExchangeSpot;
   viewsCount: number;
   savesCount: number;
+  createdAt: string;
+}
+
+export interface Report {
+  id: string;
+  listingId?: string;
+  reportedUserId?: string;
+  reporterId: string;
+  reason: 'SCAM' | 'WRONG_PRODUCT' | 'OFFENSIVE' | 'PROHIBITED' | 'MISLEADING_PRICE' | 'FAKE_IDENTITY';
+  details?: string;
+  status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
   createdAt: string;
 }
 

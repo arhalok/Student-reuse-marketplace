@@ -154,11 +154,25 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           </div>
         )}
 
-        {/* Preferred Exchange Spot */}
+        {/* Calculator Condition Checklist (Section 6) */}
+        {listing.calculatorInspection && (
+          <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-zinc-500">
+            <span className="text-emerald-700 font-medium">✓ Tested &amp; Working</span>
+            <span>• {listing.calculatorInspection.displayCondition.replace('_', ' ').toLowerCase()} LCD</span>
+            <span>• {listing.calculatorInspection.batteryCondition.toLowerCase()} battery</span>
+          </div>
+        )}
+
+        {/* Preferred Exchange Spot & Distance */}
         {spot && (
-          <div className="mt-2.5 flex items-center gap-1 text-[11px] text-zinc-500 truncate">
-            <MapPin className="h-3 w-3 text-emerald-600 shrink-0" />
-            <span className="truncate">{spot.name}</span>
+          <div className="mt-2.5 flex items-center justify-between text-[11px] text-zinc-500">
+            <div className="flex items-center gap-1 truncate">
+              <MapPin className="h-3 w-3 text-emerald-600 shrink-0" />
+              <span className="truncate">{spot.name}</span>
+            </div>
+            {listing.distanceKm && (
+              <span className="font-semibold text-zinc-600 shrink-0">{listing.distanceKm} km</span>
+            )}
           </div>
         )}
 

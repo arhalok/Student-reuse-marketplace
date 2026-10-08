@@ -12,6 +12,7 @@ import {
   ExchangeSpot,
   ItemCondition,
   TransactionMode,
+  Report,
 } from './types';
 import {
   INITIAL_CAMPUSES,
@@ -67,6 +68,25 @@ interface MarketplaceContextType {
   selectedMode: TransactionMode | 'ALL';
   setSelectedMode: (mode: TransactionMode | 'ALL') => void;
 
+  // Safety & Moderation (Section 20)
+  reports: Report[];
+  reportListing: (listingId: string, reason: Report['reason'], details?: string) => void;
+  blockedUserIds: string[];
+  blockUser: (userId: string) => void;
+
+  // Onboarding (Section 3)
+  onboardStudent: (data: Partial<StudentProfile>) => StudentProfile;
+
+  // Health Metrics (Section 31)
+  marketplaceHealth: {
+    activeListings: number;
+    activeRequests: number;
+    activeOffers: number;
+    completedTransactions: number;
+    totalViews: number;
+    totalMessages: number;
+  };
+
   // Sustainability stats
   impactStats: {
     itemsReused: number;
@@ -87,6 +107,8 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
   const [needRequests, setNeedRequests] = useState<NeedRequest[]>(INITIAL_NEED_REQUESTS);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
   
   const [selectedSemester, setSelectedSemester] = useState<number | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -373,11 +395,64 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
     setMessages(prev => [...prev, newMsg]);
   };
 
+  const reportListing = (listingId: string, reason: Report['reason'], details?: string) => {
+    const newReport: Report = {
+      id: `rep-${Date.now()}`,
+      listingId,
+      reporterId: currentProfile.id,
+      reason,
+      details,
+      status: 'PENDING',
+      createdAt: new Date().toISOString(),
+    };
+    setReports(prev => [newReport, ...prev]);
+    setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: 'REPORTED' } : l));
+  };
+
+  const blockUser = (userId: string) => {
+    setBlockedUserIds(prev => [...prev, userId]);
+  };
+
+  const onboardStudent = (data: Partial<StudentProfile>): StudentProfile => {
+    const newProfile: StudentProfile = {
+      id: `user-${Date.now()}`,
+      campusId: data.campusId || currentCampus.id,
+      fullName: data.fullName || 'New Verified Student',
+      collegeEmail: data.collegeEmail || `${(data.fullName || 'student').toLowerCase().replace(/\s+/g, '.')}@iitd.ac.in`,
+      isStudentVerified: true,
+      degreeProgram: data.degreeProgram || 'B.Tech Engineering',
+      currentYear: data.currentYear || 1,
+      currentSemester: data.currentSemester || 1,
+      avatarUrl: data.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+      totalTransactions: 0,
+      successfulTransactions: 0,
+      responseRatePercent: 100,
+      avgResponseMinutes: 10,
+      trustRating: 5.0,
+      memberSinceYear: 2026,
+    };
+    INITIAL_PROFILES[newProfile.id] = newProfile;
+    setProfileState(newProfile);
+    return newProfile;
+  };
+
+  // Internal marketplace health telemetry (Section 31 of Blueprint)
+  const marketplaceHealth = {
+    activeListings: listings.filter(l => l.status === 'ACTIVE').length,
+    activeRequests: needRequests.filter(n => n.status === 'OPEN').length,
+    activeOffers: offers.filter(o => o.status === 'PENDING' || o.status === 'COUNTERED' || o.status === 'ACCEPTED').length,
+    completedTransactions: listings.filter(l => l.status === 'SOLD').length,
+    totalViews: listings.reduce((sum, l) => sum + (l.viewsCount || 0), 0),
+    totalMessages: messages.length,
+  };
+
   const resetData = () => {
     setListings(INITIAL_LISTINGS);
     setNeedRequests(INITIAL_NEED_REQUESTS);
     setOffers([]);
     setMessages([]);
+    setReports([]);
+    setBlockedUserIds([]);
     localStorage.removeItem('srm_listings');
     localStorage.removeItem('srm_needs');
     localStorage.removeItem('srm_offers');
@@ -404,6 +479,12 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
         needRequests,
         offers,
         messages,
+        reports,
+        reportListing,
+        blockedUserIds,
+        blockUser,
+        onboardStudent,
+        marketplaceHealth,
         createListing,
         createNeedRequest,
         makeOffer,

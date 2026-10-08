@@ -87,6 +87,11 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   const [hasHighlighting, setHasHighlighting] = useState(false);
   const [missingPages, setMissingPages] = useState(false);
 
+  // Calculator checklist (Section 6)
+  const [calcIsWorking, setCalcIsWorking] = useState(true);
+  const [calcDisplay, setCalcDisplay] = useState<'CLEAN' | 'MINOR_SCRATCHES' | 'DEAD_PIXELS'>('CLEAN');
+  const [calcBattery, setCalcBattery] = useState<'FRESH' | 'WORKING' | 'NEEDS_REPLACEMENT'>('FRESH');
+
   if (!isOpen) return null;
 
   // Price assistance recommendation
@@ -120,11 +125,18 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
       images: [imageUrl],
       preferredSpotId,
       relevantSemesters: selectedSemesters,
+      distanceKm: 0.4,
       bookInspection: categoryId === 'cat-books' ? {
         hasWriting,
         hasHighlighting,
         missingPages,
         coverWear: false,
+      } : undefined,
+      calculatorInspection: categoryId === 'cat-calc' ? {
+        model: title,
+        isWorking: calcIsWorking,
+        displayCondition: calcDisplay,
+        batteryCondition: calcBattery,
       } : undefined,
     });
 
@@ -379,6 +391,53 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
                   />
                   <span className="text-red-700">Missing any pages?</span>
                 </label>
+              </div>
+            </div>
+          )}
+
+          {/* Calculator Inspection Specifics (Section 6) */}
+          {categoryId === 'cat-calc' && (
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3.5">
+              <span className="text-xs font-bold text-zinc-800 flex items-center gap-1.5 mb-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                Calculator Inspection Checklist (Section 6)
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div>
+                  <label className="block text-[11px] font-semibold text-zinc-600 mb-0.5">Keypad &amp; Power</label>
+                  <select
+                    value={calcIsWorking ? 'yes' : 'no'}
+                    onChange={(e) => setCalcIsWorking(e.target.value === 'yes')}
+                    className="w-full rounded-lg border border-zinc-300 p-1.5 text-xs bg-white text-zinc-900"
+                  >
+                    <option value="yes">✓ Fully Working</option>
+                    <option value="no">Needs Repair / New Battery</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-zinc-600 mb-0.5">Display Screen</label>
+                  <select
+                    value={calcDisplay}
+                    onChange={(e) => setCalcDisplay(e.target.value as 'CLEAN' | 'MINOR_SCRATCHES' | 'DEAD_PIXELS')}
+                    className="w-full rounded-lg border border-zinc-300 p-1.5 text-xs bg-white text-zinc-900"
+                  >
+                    <option value="CLEAN">Clean, crisp LCD</option>
+                    <option value="MINOR_SCRATCHES">Minor hairline scratches</option>
+                    <option value="DEAD_PIXELS">Dead pixels visible</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-zinc-600 mb-0.5">Battery Health</label>
+                  <select
+                    value={calcBattery}
+                    onChange={(e) => setCalcBattery(e.target.value as 'FRESH' | 'WORKING' | 'NEEDS_REPLACEMENT')}
+                    className="w-full rounded-lg border border-zinc-300 p-1.5 text-xs bg-white text-zinc-900"
+                  >
+                    <option value="FRESH">Fresh / New battery</option>
+                    <option value="WORKING">Working fine</option>
+                    <option value="NEEDS_REPLACEMENT">Needs replacement</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
