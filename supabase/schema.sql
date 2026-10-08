@@ -261,9 +261,9 @@ ON CONFLICT (short_code) DO NOTHING;
 
 -- Exchange Spots
 INSERT INTO campus_exchange_spots (id, campus_id, name, description, is_recommended) VALUES
-  ('s1111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', 'Central Library Ground Floor Foyer', 'CCTV monitored, safe & active until 9 PM', TRUE),
-  ('s2222222-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', 'Student Activity Center (SAC) Cafe', 'Busy student hub, ideal for day exchange', TRUE),
-  ('s3333333-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', 'Main Academic Gate Security Desk', 'Open 24/7 with campus guard supervision', TRUE)
+  ('a1111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', 'Central Library Ground Floor Foyer', 'CCTV monitored, safe & active until 9 PM', TRUE),
+  ('a2222222-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', 'Student Activity Center (SAC) Cafe', 'Busy student hub, ideal for day exchange', TRUE),
+  ('a3333333-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', 'Main Academic Gate Security Desk', 'Open 24/7 with campus guard supervision', TRUE)
 ON CONFLICT DO NOTHING;
 
 -- Categories
