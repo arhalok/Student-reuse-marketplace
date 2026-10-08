@@ -4,8 +4,9 @@ const { Client } = require('pg');
 
 async function main() {
   const host = 'aws-0-ap-southeast-1.pooler.supabase.com';
-  const connectionString = `postgresql://postgres.rcuoznqhdzqmkgzrkzmw:u3NR7MyI6BA6ML0R@${host}:5432/postgres`;
-  console.log('Connecting to Supabase PostgreSQL at:', host);
+  const defaultConnectionString = `postgresql://postgres.rcuoznqhdzqmkgzrkzmw:u3NR7MyI6BA6ML0R@${host}:5432/postgres`;
+  const connectionString = process.env.DATABASE_URL || defaultConnectionString;
+  console.log('Connecting to Supabase PostgreSQL at:', connectionString.replace(/:[^:@]+@/, ':****@'));
 
   const client = new Client({
     connectionString,

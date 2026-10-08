@@ -8,12 +8,31 @@
 -- 1. Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Custom Enumerated Types
-CREATE TYPE transaction_mode AS ENUM ('BUY', 'EXCHANGE', 'RENT', 'GIVE_AWAY');
-CREATE TYPE item_condition AS ENUM ('LIKE_NEW', 'EXCELLENT', 'GOOD', 'FAIR', 'FOR_PARTS');
-CREATE TYPE listing_status AS ENUM ('DRAFT', 'ACTIVE', 'OFFER_RECEIVED', 'RESERVED', 'MEETING_SCHEDULED', 'SOLD', 'EXPIRED', 'CANCELLED', 'REPORTED');
-CREATE TYPE offer_status AS ENUM ('PENDING', 'ACCEPTED', 'COUNTERED', 'REJECTED', 'CANCELLED', 'COMPLETED');
-CREATE TYPE request_status AS ENUM ('OPEN', 'MATCHED', 'FULFILLED', 'EXPIRED', 'CANCELLED');
+-- 2. Custom Enumerated Types (Idempotent)
+DO $$ BEGIN
+  CREATE TYPE transaction_mode AS ENUM ('BUY', 'EXCHANGE', 'RENT', 'GIVE_AWAY');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE item_condition AS ENUM ('LIKE_NEW', 'EXCELLENT', 'GOOD', 'FAIR', 'FOR_PARTS');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE listing_status AS ENUM ('DRAFT', 'ACTIVE', 'OFFER_RECEIVED', 'RESERVED', 'MEETING_SCHEDULED', 'SOLD', 'EXPIRED', 'CANCELLED', 'REPORTED');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE offer_status AS ENUM ('PENDING', 'ACCEPTED', 'COUNTERED', 'REJECTED', 'CANCELLED', 'COMPLETED');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE request_status AS ENUM ('OPEN', 'MATCHED', 'FULFILLED', 'EXPIRED', 'CANCELLED');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- 3. Campuses Table
 CREATE TABLE IF NOT EXISTS campuses (
@@ -212,40 +231,67 @@ ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE marketplace_events ENABLE ROW LEVEL SECURITY;
 
 -- Campuses & Categories & Spots: Viewable by anyone authenticated
+DROP POLICY IF EXISTS "Public read campuses" ON campuses;
 CREATE POLICY "Public read campuses" ON campuses FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public read spots" ON campus_exchange_spots;
 CREATE POLICY "Public read spots" ON campus_exchange_spots FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public read categories" ON categories;
 CREATE POLICY "Public read categories" ON categories FOR SELECT USING (true);
 
 -- Profiles: Anyone can view, only owner can update
+DROP POLICY IF EXISTS "Profiles viewable by authenticated users" ON profiles;
 CREATE POLICY "Profiles viewable by authenticated users" ON profiles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
 -- Listings: Everyone in same campus can view active; sellers can manage own
+DROP POLICY IF EXISTS "Listings viewable by all" ON listings;
 CREATE POLICY "Listings viewable by all" ON listings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can insert own listings" ON listings;
 CREATE POLICY "Users can insert own listings" ON listings FOR INSERT WITH CHECK (auth.uid() = seller_id);
+
+DROP POLICY IF EXISTS "Users can update own listings" ON listings;
 CREATE POLICY "Users can update own listings" ON listings FOR UPDATE USING (auth.uid() = seller_id);
 
 -- Need Requests: Viewable by all; owners can insert/update
+DROP POLICY IF EXISTS "Needs viewable by all" ON need_requests;
 CREATE POLICY "Needs viewable by all" ON need_requests FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can insert own needs" ON need_requests;
 CREATE POLICY "Users can insert own needs" ON need_requests FOR INSERT WITH CHECK (auth.uid() = buyer_id);
+
+DROP POLICY IF EXISTS "Users can update own needs" ON need_requests;
 CREATE POLICY "Users can update own needs" ON need_requests FOR UPDATE USING (auth.uid() = buyer_id);
 
 -- Offers: Viewable by buyer and seller only
+DROP POLICY IF EXISTS "Offers viewable by buyer or seller" ON offers;
 CREATE POLICY "Offers viewable by buyer or seller" ON offers FOR SELECT USING (
   auth.uid() = buyer_id OR auth.uid() = seller_id
 );
+
+DROP POLICY IF EXISTS "Buyers can insert offers" ON offers;
 CREATE POLICY "Buyers can insert offers" ON offers FOR INSERT WITH CHECK (auth.uid() = buyer_id);
+
+DROP POLICY IF EXISTS "Parties can update offers" ON offers;
 CREATE POLICY "Parties can update offers" ON offers FOR UPDATE USING (
   auth.uid() = buyer_id OR auth.uid() = seller_id
 );
 
 -- Messages: Sender and receiver can view and insert
+DROP POLICY IF EXISTS "Messages viewable by sender or receiver" ON messages;
 CREATE POLICY "Messages viewable by sender or receiver" ON messages FOR SELECT USING (
   auth.uid() = sender_id OR auth.uid() = receiver_id
 );
+
+DROP POLICY IF EXISTS "Users can send messages" ON messages;
 CREATE POLICY "Users can send messages" ON messages FOR INSERT WITH CHECK (auth.uid() = sender_id);
 
 -- Analytics events: insert by anyone
+DROP POLICY IF EXISTS "Insert events" ON marketplace_events;
 CREATE POLICY "Insert events" ON marketplace_events FOR INSERT WITH CHECK (true);
 
 -- ==============================================================================
